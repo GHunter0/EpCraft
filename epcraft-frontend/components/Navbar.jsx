@@ -1,0 +1,268 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { Search, Heart, ShoppingBag, Menu, X, User, Bot, ChevronDown, Package, LogIn } from "lucide-react";
+import { useShop } from "@/lib/ShopContext";
+
+const links = [
+  { href: "/shop", label: "Shop" },
+  { href: "/customize", label: "Custom Orders" },
+  { href: "/story", label: "Our Story" },
+  { href: "/ai-stylist", label: "AI Stylist" },
+];
+
+export default function Navbar({ onOpenChat }) {
+  const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const pathname = usePathname();
+  const { cartCount, wishlist } = useShop();
+
+  return (
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-cream/95 backdrop-blur-md">
+        <div className="container-page flex h-[72px] items-center justify-between">
+          <Link
+            href="/"
+            className="font-serif text-2xl font-bold tracking-tight text-espresso md:text-3xl"
+          >
+            EpCraft
+          </Link>
+
+          <nav className="hidden items-center gap-10 md:flex">
+            {links.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`font-sans text-base transition-colors hover:text-espresso ${
+                    isActive
+                      ? "border-b-2 border-walnut font-medium pb-1 text-espresso"
+                      : "text-bark"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="hidden items-center gap-6 md:flex">
+            {/* AI Assistant trigger */}
+            <button
+              onClick={onOpenChat}
+              aria-label="Open AI Assistant"
+              className="flex items-center gap-1.5 rounded-pill bg-gold/15 px-3 py-1.5 font-sans text-xs font-semibold text-espresso hover:bg-gold hover:text-white transition-colors"
+            >
+              <Bot size={16} />
+              AI Assistant
+            </button>
+
+            {/* Search */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search catalog"
+              className="text-bark hover:text-espresso transition-colors"
+            >
+              <Search size={20} />
+            </button>
+
+            {/* Wishlist */}
+            <Link
+              href="/wishlist"
+              aria-label="Wishlist"
+              className="relative text-bark hover:text-espresso transition-colors"
+            >
+              <Heart size={20} />
+              {wishlist.length > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-white">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
+
+            {/* Cart */}
+            <Link
+              href="/cart"
+              aria-label="Cart"
+              className="relative text-bark hover:text-espresso transition-colors"
+            >
+              <ShoppingBag size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-espresso text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Profile Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen((v) => !v)}
+                aria-label="User Account"
+                className="flex items-center gap-1 text-bark hover:text-espresso transition-colors p-1 rounded-full hover:bg-sand/40"
+              >
+                <User size={20} />
+                <ChevronDown size={14} />
+              </button>
+
+              {profileOpen && (
+                <div
+                  onMouseLeave={() => setProfileOpen(false)}
+                  className="absolute right-0 mt-3 w-52 rounded-xl border border-border/60 bg-white p-2 shadow-card animate-in fade-in slide-in-from-top-2 duration-200 z-50"
+                >
+                  <div className="border-b border-border/40 px-3 py-2">
+                    <p className="font-serif text-sm font-bold text-espresso">Julian Vane</p>
+                    <p className="font-sans text-xs text-bark">julian@epcraft.com</p>
+                  </div>
+                  <div className="py-1">
+                    <Link
+                      href="/account"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
+                    >
+                      <User size={16} className="text-espresso" /> My Profile
+                    </Link>
+                    <Link
+                      href="/orders"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
+                    >
+                      <Package size={16} className="text-espresso" /> Orders & Tracking
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
+                    >
+                      <Heart size={16} className="text-espresso" /> Saved Wishlist
+                    </Link>
+                    <hr className="my-1 border-border/40" />
+                    <Link
+                      href="/login"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-bark hover:bg-cream"
+                    >
+                      <LogIn size={16} /> Sign Out
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            className="text-espresso md:hidden"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {open && (
+          <div className="border-t border-border/60 bg-cream px-6 py-6 md:hidden">
+            <nav className="flex flex-col gap-4">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`font-sans text-lg ${
+                    pathname === link.href ? "font-bold text-espresso" : "text-bark"
+                  }`}
+                  onClick={() => setOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <hr className="my-2 border-border/60" />
+              <div className="flex flex-col gap-3 pt-1">
+                <Link
+                  href="/account"
+                  className="flex items-center gap-2 font-sans text-base text-bark"
+                  onClick={() => setOpen(false)}
+                >
+                  <User size={18} /> My Account & Profile
+                </Link>
+                <Link
+                  href="/orders"
+                  className="flex items-center gap-2 font-sans text-base text-bark"
+                  onClick={() => setOpen(false)}
+                >
+                  <Package size={18} /> Orders & Tracking
+                </Link>
+                <Link
+                  href="/wishlist"
+                  className="flex items-center gap-2 font-sans text-base text-bark"
+                  onClick={() => setOpen(false)}
+                >
+                  <Heart size={18} /> Wishlist ({wishlist.length})
+                </Link>
+                <Link
+                  href="/cart"
+                  className="flex items-center gap-2 font-sans text-base text-bark"
+                  onClick={() => setOpen(false)}
+                >
+                  <ShoppingBag size={18} /> Cart ({cartCount})
+                </Link>
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    if (onOpenChat) onOpenChat();
+                  }}
+                  className="flex items-center gap-2 font-sans text-base text-espresso font-medium pt-2"
+                >
+                  <Bot size={18} className="text-gold" /> EpCraft AI Chatbot
+                </button>
+              </div>
+            </nav>
+          </div>
+        )}
+      </header>
+
+      {/* Quick Search Modal Overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-espresso/40 p-4 pt-20 backdrop-blur-xs">
+          <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-card">
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="absolute right-4 top-4 text-bark hover:text-espresso"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="font-serif text-xl font-bold text-espresso">Search EpCraft</h3>
+            <p className="mt-1 font-sans text-sm text-bark">Find handcrafted furniture, decor & custom pieces</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchQuery.trim()) {
+                  window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
+                  setSearchOpen(false);
+                }
+              }}
+              className="mt-4 flex gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Search Walnut Table, Oak Board, etc..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="input-field flex-1"
+              />
+              <button type="submit" className="btn-dark">
+                Search
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
