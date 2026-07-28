@@ -273,9 +273,13 @@ export default function CheckoutPage() {
       JSON.stringify(order),
     );
 
-    setFormMessage(
-      "Order details saved. Order Confirmation page is the next page.",
+    window.localStorage.removeItem(CART_STORAGE_KEY);
+
+    window.dispatchEvent(
+        new Event("epcraft-cart-updated"),
     );
+
+    router.push("/order-confirmation");
   }
 
   return (
