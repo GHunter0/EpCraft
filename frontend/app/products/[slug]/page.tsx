@@ -41,6 +41,16 @@ type StoredCartItem = {
 };
 
 const CART_STORAGE_KEY = "epcraft-cart";
+function getNumericPrice(value: string | number) {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const cleanedValue = value.replace(/,/g, "");
+  const priceMatch = cleanedValue.match(/\d+(?:\.\d+)?/);
+
+  return priceMatch ? Number(priceMatch[0]) : 0;
+}
 const products: Record<string, Product> = {
   "modern-heirloom-dining-table": {
     slug: "modern-heirloom-dining-table",
@@ -978,8 +988,7 @@ export default function ProductDetailPage() {
   const itemId =
     `${product.slug}::${finishName}::${selectedSize}`;
 
-  const numericPrice =
-    Number(product.price.replace(/[^0-9.]/g, "")) || 0;
+  const numericPrice = getNumericPrice(product.price);
 
   let currentItems: StoredCartItem[] = [];
 
@@ -996,14 +1005,23 @@ export default function ProductDetailPage() {
     (item) => item.id === itemId,
   );
 
+  const productDetails =
+    `${product.woodLabel}: ${finishName} • ` +
+    `${product.sizeLabel}: ${selectedSize}`;
+
   const nextItems = existingItem
     ? currentItems.map((item) =>
         item.id === itemId
-          ? {
-              ...item,
-              quantity: item.quantity + quantity,
-            }
-          : item,
+            ? {
+                ...item,
+                slug: product.slug,
+                name: product.name,
+                details: productDetails,
+                price: numericPrice,
+                quantity: item.quantity + quantity,
+                image: product.images[0],
+              }
+            : item,
       )
     : [
         ...currentItems,
@@ -1011,9 +1029,7 @@ export default function ProductDetailPage() {
           id: itemId,
           slug: product.slug,
           name: product.name,
-          details:
-            `${product.woodLabel}: ${finishName} • ` +
-            `${product.sizeLabel}: ${selectedSize}`,
+          details: productDetails,
           price: numericPrice,
           quantity,
           image: product.images[0],

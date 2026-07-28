@@ -268,7 +268,7 @@ useEffect(() => {
   const subtotal = useMemo(
     () =>
       cartItems.reduce(
-        (total, item) => total + item.price * item.quantity,
+        (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),
         0,
       ),
     [cartItems],
@@ -771,11 +771,7 @@ useEffect(() => {
                   <button
                     type="button"
                     disabled={cartItems.length === 0}
-                    onClick={() =>
-                      window.alert(
-                        "Checkout page is the next page we will create.",
-                      )
-                    }
+                    onClick={() => router.push("/checkout")}
                     className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-[#7a5407] px-6 py-4 text-[14px] font-medium tracking-[0.04em] text-[#f4d79b] shadow-lg transition hover:bg-[#654405] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Proceed to Checkout
