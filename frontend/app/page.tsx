@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 type Product = {
@@ -91,7 +92,7 @@ const products: Product[] = [
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-7 w-7">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4.5 4.5" />
     </svg>
@@ -107,7 +108,7 @@ function CartIcon() {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-8 w-8"
+      className="h-6 w-6"
     >
       <path d="M3 4h2l2.2 10a2 2 0 0 0 2 1.6h7.5a2 2 0 0 0 1.9-1.4L21 7H6" />
       <circle cx="9.5" cy="20" r="1" />
@@ -125,7 +126,7 @@ function UserIcon() {
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-8 w-8"
+      className="h-6 w-6"
     >
       <circle cx="12" cy="8" r="3.2" />
       <path d="M6 19c.8-3.6 2.8-5.4 6-5.4s5.2 1.8 6 5.4" />
@@ -180,8 +181,11 @@ function ShareIcon() {
 }
 
 export default function Home() {
-  const [activeNav, setActiveNav] = useState<NavItem>("Shop");
+  const router = useRouter();
+
+  const [activeNav, setActiveNav] = useState<NavItem | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [wishlist, setWishlist] = useState<number[]>([]);
@@ -201,12 +205,19 @@ export default function Home() {
   }
 
   function scrollToProducts() {
-    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+    setActiveNav("Shop");
+
+    document
+      .getElementById("products")
+      ?.scrollIntoView({ behavior: "smooth" });
   }
 
   function navClass(item: NavItem) {
+    const isActive =
+      item === "AI Stylist" ? chatOpen : activeNav === item;
+
     return `border-b-2 bg-transparent pb-2 transition hover:text-[#5a2e14] ${
-      activeNav === item
+      isActive
         ? "border-[#6b4328] font-medium text-[#5a2e14]"
         : "border-transparent text-[#5d5047]"
     }`;
@@ -218,7 +229,17 @@ export default function Home() {
       .getElementById(sectionId)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
+    const query = searchText.trim();
+
+    if (!query) {
+      return;
+    }
+
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  }
   function handleNewsletter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -273,10 +294,7 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={() => {
-                setActiveNav("AI Stylist");
-                setChatOpen(true);
-              }}
+              onClick={() => setChatOpen(true)}
               className={navClass("AI Stylist")}
             >
               AI Stylist
@@ -285,16 +303,32 @@ export default function Home() {
 
           <div className="relative flex items-center gap-3 md:gap-5">
             {searchOpen && (
-              <input
-                autoFocus
-                placeholder="Search products"
-                className="absolute right-28 top-1/2 hidden w-56 -translate-y-1/2 rounded-full border border-[#dac7b2] bg-white px-4 py-2 text-sm outline-none focus:border-[#5a2e14] md:block"
-              />
+              <form
+                onSubmit={handleSearch}
+                className="absolute right-28 top-1/2 hidden w-64 -translate-y-1/2 md:block"
+              >
+                <input
+                  autoFocus
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="Search products"
+                  className="w-full rounded-full border border-[#dac7b2] bg-white px-5 py-2.5 text-sm outline-none focus:border-[#5a2e14]"
+                />
+              </form>
             )}
 
             <button
               type="button"
-              onClick={() => setSearchOpen((value) => !value)}
+              onClick={() => {
+                if (searchOpen && searchText.trim()) {
+                  router.push(
+                    `/search?q=${encodeURIComponent(searchText.trim())}`,
+                  );
+                  return;
+                }
+
+                setSearchOpen((value) => !value);
+              }}
               className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
               aria-label="Search"
             >

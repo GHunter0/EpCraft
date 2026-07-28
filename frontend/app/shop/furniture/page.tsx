@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 
 type Product = {
@@ -90,7 +91,7 @@ const woodOptions = ["Oak", "Walnut", "Teak", "Mango"];
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4.5 4.5" />
     </svg>
@@ -205,6 +206,10 @@ function CheckboxRow({
 }
 
 export default function FurniturePage() {
+  const router = useRouter();
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["Furniture"]);
   const [selectedWoods, setSelectedWoods] = useState<string[]>(["Walnut"]);
   const [filtersActive, setFiltersActive] = useState(false);
@@ -259,7 +264,17 @@ export default function FurniturePage() {
         : [...current, productId],
     );
   }
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
+    const query = searchText.trim();
+
+    if (!query) {
+      return;
+    }
+
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  }
   function handleNewsletter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -286,36 +301,92 @@ export default function FurniturePage() {
             EpCraft
           </Link>
 
-          <nav className="hidden items-center gap-12 text-[18px] text-[#5d5047] lg:flex">
+          <nav className="hidden items-center gap-12 text-[18px] lg:flex">
             <Link
               href="/shop/furniture"
-              className="border-b-2 border-[#6b4328] pb-2 font-medium text-[#5a2e14]"
+              className={`border-b-2 pb-2 transition hover:text-[#5a2e14] ${
+                !chatOpen
+                  ? "border-[#6b4328] font-medium text-[#5a2e14]"
+                  : "border-transparent text-[#5d5047]"
+              }`}
             >
               Shop
             </Link>
-            <Link href="/#categories" className="transition hover:text-[#5a2e14]">
+
+            <Link
+              href="/#categories"
+              className="border-b-2 border-transparent pb-2 text-[#5d5047] transition hover:text-[#5a2e14]"
+            >
               Custom Orders
             </Link>
-            <Link href="/#story" className="transition hover:text-[#5a2e14]">
+
+            <Link
+              href="/#story"
+              className="border-b-2 border-transparent pb-2 text-[#5d5047] transition hover:text-[#5a2e14]"
+            >
               Our Story
             </Link>
+
             <button
               type="button"
               onClick={() => setChatOpen(true)}
-              className="transition hover:text-[#5a2e14]"
+              className={`border-b-2 bg-transparent pb-2 transition hover:text-[#5a2e14] ${
+                chatOpen
+                  ? "border-[#6b4328] font-medium text-[#5a2e14]"
+                  : "border-transparent text-[#5d5047]"
+              }`}
             >
               AI Stylist
             </button>
           </nav>
 
-          <div className="flex items-center gap-3 md:gap-5">
-            <button type="button" className="rounded-full p-2 hover:bg-[#f1e5d6]" aria-label="Search">
+          <div className="relative flex items-center gap-3 md:gap-5">
+            {searchOpen && (
+              <form
+                onSubmit={handleSearch}
+                className="absolute right-28 top-1/2 hidden w-64 -translate-y-1/2 md:block"
+              >
+                <input
+                  autoFocus
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="Search products"
+                  className="w-full rounded-full border border-[#dac7b2] bg-white px-5 py-2.5 text-sm outline-none focus:border-[#5a2e14]"
+                />
+              </form>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                if (searchOpen && searchText.trim()) {
+                  router.push(
+                    `/search?q=${encodeURIComponent(searchText.trim())}`,
+                  );
+                  return;
+                }
+
+                setSearchOpen((value) => !value);
+              }}
+              className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
+              aria-label="Search"
+            >
               <SearchIcon />
             </button>
-            <button type="button" className="rounded-full p-2 hover:bg-[#f1e5d6]" aria-label="Cart">
+
+            <button
+              type="button"
+              className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
+              aria-label="Cart"
+            >
               <CartIcon />
             </button>
-            <button type="button" className="rounded-full p-2 hover:bg-[#f1e5d6]" aria-label="Account">
+
+            <button
+              type="button"
+              className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
+              aria-label="Account"
+            >
               <UserIcon />
             </button>
           </div>

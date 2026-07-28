@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 type Product = {
   slug: string;
@@ -569,6 +569,181 @@ const products: Record<string, Product> = {
     ],
   },
 
+
+  "elysium-live-edge-table": {
+    slug: "elysium-live-edge-table",
+    name: "Elysium Live Edge Table",
+    room: "Dining Room",
+    badge: "Solid American Walnut",
+    price: "Rs. 4,850.00",
+    rating: "4.9",
+    reviews: 27,
+    description:
+      "A live-edge walnut dining table that preserves the expressive outline and flowing grain of the original timber.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#8f5a36]" },
+      { name: "Honey", className: "bg-[#bf8950]" },
+      { name: "Dark", className: "bg-[#4a2d23]" },
+    ],
+    sizes: ["Six Seater", "Eight Seater", "Ten Seater"],
+    images: ["/epcraft/search-results/elysium-live-edge-table.jpg"],
+    detailsTitle: "A Table Shaped by the Tree",
+    detailsText:
+      "The Elysium table follows the original live edge of the walnut slab, celebrating natural movement while using a carefully engineered base for everyday stability.",
+    bullets: [
+      "Solid walnut slab construction.",
+      "Hand-finished natural live edge.",
+      "Traditional structural joinery.",
+    ],
+  },
+
+  "luna-pedestal-table": {
+    slug: "luna-pedestal-table",
+    name: "Luna Pedestal Table",
+    room: "Dining Room",
+    badge: "Sculpted Walnut",
+    price: "Rs. 3,950.00",
+    rating: "4.8",
+    reviews: 19,
+    description:
+      "A round walnut dining table with a sculpted central pedestal that creates generous legroom and a calm architectural presence.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#9a633e]" },
+      { name: "Honey", className: "bg-[#c38c50]" },
+      { name: "Dark", className: "bg-[#452b23]" },
+    ],
+    sizes: ["Four Seater", "Six Seater"],
+    images: ["/epcraft/search-results/luna-pedestal-table.jpg"],
+    detailsTitle: "A Softer Dining Silhouette",
+    detailsText:
+      "The Luna Pedestal Table combines a smooth circular top with a hand-shaped base, balancing visual lightness with dependable solid-wood construction.",
+    bullets: [
+      "Sculpted solid walnut pedestal.",
+      "Round family-friendly profile.",
+      "Hand-rubbed natural finish.",
+    ],
+  },
+
+  "aeris-tapered-table": {
+    slug: "aeris-tapered-table",
+    name: "Aeris Tapered Table",
+    room: "Dining Room",
+    badge: "Modern Walnut",
+    price: "Rs. 4,200.00",
+    rating: "4.7",
+    reviews: 23,
+    description:
+      "A refined walnut dining table with tapered legs and a visually light frame designed for modern interiors.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#98613c]" },
+      { name: "Honey", className: "bg-[#c28b50]" },
+      { name: "Espresso", className: "bg-[#3f2922]" },
+    ],
+    sizes: ["Six Seater", "Eight Seater"],
+    images: ["/epcraft/search-results/abct.jpg"],
+    detailsTitle: "Lightness Through Proportion",
+    detailsText:
+      "Tapered legs and a slim apron give the Aeris table an elegant profile while traditional joinery keeps the frame strong for daily dining.",
+    bullets: [
+      "Slim tapered solid-wood legs.",
+      "Traditional mortise-and-tenon frame.",
+      "Low-sheen protective finish.",
+    ],
+  },
+
+  "monolith-harvest-table": {
+    slug: "monolith-harvest-table",
+    name: "Monolith Harvest Table",
+    room: "Dining Room",
+    badge: "Heavy Solid Walnut",
+    price: "Rs. 7,200.00",
+    rating: "4.9",
+    reviews: 15,
+    description:
+      "A substantial harvest table defined by a thick walnut top and bold architectural supports.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#8b5737]" },
+      { name: "Dark", className: "bg-[#412920]" },
+      { name: "Smoke", className: "bg-[#5d5049]" },
+    ],
+    sizes: ["Eight Seater", "Ten Seater", "Twelve Seater"],
+    images: ["/epcraft/search-results/monolith-harvest-table.jpg"],
+    detailsTitle: "Built for Generations",
+    detailsText:
+      "The Monolith Harvest Table uses generous timber sections and precise joinery to create a lasting centerpiece for large gatherings.",
+    bullets: [
+      "Extra-thick solid walnut top.",
+      "Reinforced architectural base.",
+      "Hand-applied oil and wax finish.",
+    ],
+  },
+
+  "bistro-walnut-table": {
+    slug: "bistro-walnut-table",
+    name: "Bistro Walnut Table",
+    room: "Dining Room",
+    badge: "Compact Solid Walnut",
+    price: "Rs. 2,750.00",
+    rating: "4.6",
+    reviews: 20,
+    description:
+      "A compact four-seater walnut table designed for apartments, breakfast areas and smaller dining rooms.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#95613d]" },
+      { name: "Honey", className: "bg-[#bd8547]" },
+      { name: "Dark", className: "bg-[#493027]" },
+    ],
+    sizes: ["Four Seater"],
+    images: ["/epcraft/search-results/bistro-walnut-table.jpg"],
+    detailsTitle: "Compact Without Compromise",
+    detailsText:
+      "The Bistro Walnut Table brings full solid-wood craftsmanship to smaller spaces through careful proportions and a clean, durable frame.",
+    bullets: [
+      "Apartment-friendly footprint.",
+      "Solid walnut construction.",
+      "Rounded hand-finished edges.",
+    ],
+  },
+
+  "origin-sculptural-table": {
+    slug: "origin-sculptural-table",
+    name: "Origin Sculptural Table",
+    room: "Dining Room",
+    badge: "Artisan Walnut",
+    price: "Rs. 6,100.00",
+    rating: "4.8",
+    reviews: 18,
+    description:
+      "A statement dining table with a sculptural base and expressive walnut top crafted as functional art.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#98603a]" },
+      { name: "Honey", className: "bg-[#c68c4b]" },
+      { name: "Dark", className: "bg-[#402821]" },
+    ],
+    sizes: ["Six Seater", "Eight Seater"],
+    images: ["/epcraft/search-results/origin-sculptural-table.jpg"],
+    detailsTitle: "Furniture as Functional Sculpture",
+    detailsText:
+      "The Origin table pairs a fluid handmade base with a restrained walnut top, creating a strong visual identity without sacrificing everyday usability.",
+    bullets: [
+      "Hand-shaped sculptural base.",
+      "Solid walnut tabletop.",
+      "Individually finished in small batches.",
+    ],
+  },
+
 };
 
 const recommendations: Recommendation[] = [
@@ -600,7 +775,7 @@ const recommendations: Recommendation[] = [
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4.5 4.5" />
     </svg>
@@ -677,10 +852,12 @@ function WarrantyIcon() {
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const slugValue = params?.slug;
   const slug = Array.isArray(slugValue) ? slugValue[0] : slugValue;
   const product = slug ? products[slug] : undefined;
-
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedFinish, setSelectedFinish] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
@@ -716,7 +893,17 @@ export default function ProductDetailPage() {
       </main>
     );
   }
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
+    const query = searchText.trim();
+
+    if (!query) {
+      return;
+    }
+
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  }
   function handleNewsletter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -745,25 +932,78 @@ export default function ProductDetailPage() {
             EpCraft
           </Link>
 
-          <nav className="hidden items-center gap-12 text-[18px] text-[#5d5047] lg:flex">
-            <Link href="/shop/furniture" className="border-b-2 border-[#6b4328] pb-2 font-medium text-[#5a2e14]">
+          <nav className="hidden items-center gap-12 text-[18px] lg:flex">
+            <Link
+              href="/shop/furniture"
+              className={`border-b-2 pb-2 transition hover:text-[#5a2e14] ${
+                !chatOpen
+                  ? "border-[#6b4328] font-medium text-[#5a2e14]"
+                  : "border-transparent text-[#5d5047]"
+              }`}
+            >
               Shop
             </Link>
-            <Link href="/#categories" className="transition hover:text-[#5a2e14]">
+
+            <Link
+              href="/#categories"
+              className="border-b-2 border-transparent pb-2 text-[#5d5047] transition hover:text-[#5a2e14]"
+            >
               Custom Orders
             </Link>
-            <Link href="/#story" className="transition hover:text-[#5a2e14]">
+
+            <Link
+              href="/#story"
+              className="border-b-2 border-transparent pb-2 text-[#5d5047] transition hover:text-[#5a2e14]"
+            >
               Our Story
             </Link>
-            <button type="button" onClick={() => setChatOpen(true)} className="transition hover:text-[#5a2e14]">
+
+            <button
+              type="button"
+              onClick={() => setChatOpen(true)}
+              className={`border-b-2 bg-transparent pb-2 transition hover:text-[#5a2e14] ${
+                chatOpen
+                  ? "border-[#6b4328] font-medium text-[#5a2e14]"
+                  : "border-transparent text-[#5d5047]"
+              }`}
+            >
               AI Stylist
             </button>
           </nav>
 
-          <div className="flex items-center gap-3 md:gap-5">
-            <button type="button" className="rounded-full p-2 transition hover:bg-[#f1e5d6]" aria-label="Search">
-              <SearchIcon />
-            </button>
+          <div className="relative flex items-center gap-3 md:gap-5">
+            {searchOpen && (
+                <form
+                    onSubmit={handleSearch}
+                    className="absolute right-28 top-1/2 hidden w-64 -translate-y-1/2 md:block"
+                >
+                    <input
+                    autoFocus
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    placeholder="Search products"
+                    className="w-full rounded-full border border-[#dac7b2] bg-white px-5 py-2.5 text-sm outline-none focus:border-[#5a2e14]"
+                    />
+                </form>
+                )}
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (searchOpen && searchText.trim()) {
+                            router.push(
+                                `/search?q=${encodeURIComponent(searchText.trim())}`,
+                            );
+                            return;
+                        }
+
+                        setSearchOpen((value) => !value);
+                    }}
+                    className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
+                    aria-label="Search"
+                >
+                    <SearchIcon />
+                </button>
 
             <button type="button" className="relative rounded-full p-2 transition hover:bg-[#f1e5d6]" aria-label="Cart">
               <CartIcon />
