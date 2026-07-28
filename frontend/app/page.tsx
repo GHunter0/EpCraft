@@ -6,12 +6,15 @@ import { FormEvent, useMemo, useState } from "react";
 
 type Product = {
   id: number;
+  slug: string;
   name: string;
   maker: string;
   price: string;
   image: string;
 };
+
 type NavItem = "Shop" | "Custom Orders" | "Our Story" | "AI Stylist";
+
 const categories = [
   { name: "Furniture", image: "/epcraft/category-furniture.png" },
   { name: "Decor", image: "/epcraft/category-decor.png" },
@@ -22,6 +25,7 @@ const categories = [
 const products: Product[] = [
   {
     id: 1,
+    slug: "walnut-dining-table",
     name: "Walnut Dining Table",
     maker: "Elias",
     price: "Rs. 52,400",
@@ -29,6 +33,7 @@ const products: Product[] = [
   },
   {
     id: 2,
+    slug: "oak-serving-board",
     name: "Oak Serving Board",
     maker: "Sarah",
     price: "Rs. 3,120",
@@ -36,6 +41,7 @@ const products: Product[] = [
   },
   {
     id: 3,
+    slug: "cedar-wall-art",
     name: "Cedar Wall Art",
     maker: "Marco",
     price: "Rs. 9,850",
@@ -43,6 +49,7 @@ const products: Product[] = [
   },
   {
     id: 4,
+    slug: "cherry-nightstand",
     name: "Cherry Nightstand",
     maker: "Anna",
     price: "Rs. 11,200",
@@ -50,6 +57,7 @@ const products: Product[] = [
   },
   {
     id: 5,
+    slug: "maple-bowl-set",
     name: "Maple Bowl Set",
     maker: "Theo",
     price: "Rs. 2,320",
@@ -57,6 +65,7 @@ const products: Product[] = [
   },
   {
     id: 6,
+    slug: "ash-floating-shelf",
     name: "Ash Floating Shelf",
     maker: "Sofia",
     price: "Rs. 4,450",
@@ -64,6 +73,7 @@ const products: Product[] = [
   },
   {
     id: 7,
+    slug: "ebony-valet-tray",
     name: "Ebony Valet Tray",
     maker: "Lucas",
     price: "Rs. 5,880",
@@ -71,6 +81,7 @@ const products: Product[] = [
   },
   {
     id: 8,
+    slug: "organic-desk-chair",
     name: "Organic Desk Chair",
     maker: "Julian",
     price: "Rs. 7,180",
@@ -192,21 +203,22 @@ export default function Home() {
   function scrollToProducts() {
     document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
   }
+
   function navClass(item: NavItem) {
     return `border-b-2 bg-transparent pb-2 transition hover:text-[#5a2e14] ${
       activeNav === item
-        ? "border-[#6b4328] text-[#5a2e14]"
+        ? "border-[#6b4328] font-medium text-[#5a2e14]"
         : "border-transparent text-[#5d5047]"
     }`;
   }
 
   function goToSection(item: NavItem, sectionId: string) {
     setActiveNav(item);
-
     document
       .getElementById(sectionId)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
   function handleNewsletter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -237,6 +249,7 @@ export default function Home() {
           <nav className="hidden items-center gap-12 text-[18px] lg:flex">
             <Link
               href="/shop/furniture"
+              onClick={() => setActiveNav("Shop")}
               className={navClass("Shop")}
             >
               Shop
@@ -376,28 +389,43 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-12 md:grid-cols-4 lg:gap-x-16">
-            {categories.map((category) => (
-              <Link
-                key={category.name}
-                href={
-                  category.name === "Furniture"
-                    ? "/shop/furniture"
-                    : "#products"
-                }
-                className="group flex flex-col items-center"
-              >
-                <div className="relative aspect-square w-full max-w-[205px] overflow-hidden rounded-full shadow-[0_14px_30px_rgba(72,42,20,0.14)] transition duration-300 group-hover:-translate-y-1">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 768px) 42vw, 205px"
-                    className="object-cover"
-                  />
-                </div>
-                <span className="mt-5 font-[Georgia,serif] text-[17px]">{category.name}</span>
-              </Link>
-            ))}
+            {categories.map((category) => {
+              const categoryContent = (
+                <>
+                  <div className="relative aspect-square w-full max-w-[205px] overflow-hidden rounded-full shadow-[0_14px_30px_rgba(72,42,20,0.14)] transition duration-300 group-hover:-translate-y-1">
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 768px) 42vw, 205px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <span className="mt-5 font-[Georgia,serif] text-[17px]">
+                    {category.name}
+                  </span>
+                </>
+              );
+
+              return category.name === "Furniture" ? (
+                <Link
+                  key={category.name}
+                  href="/shop/furniture"
+                  className="group flex flex-col items-center"
+                >
+                  {categoryContent}
+                </Link>
+              ) : (
+                <button
+                  key={category.name}
+                  type="button"
+                  onClick={scrollToProducts}
+                  className="group flex flex-col items-center"
+                >
+                  {categoryContent}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -426,19 +454,25 @@ export default function Home() {
               return (
                 <article key={product.id} className="group text-center">
                   <div className="relative aspect-[4/5] overflow-hidden rounded-[6px] bg-[#e9ddce]">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      unoptimized
-                      sizes="(max-width: 640px) 47vw, (max-width: 1024px) 31vw, 23vw"
-                      className="object-cover transition duration-500 group-hover:scale-[1.035]"
-                    />
+                    <Link
+                      href={`/products/${product.slug}`}
+                      className="absolute inset-0 z-10 block"
+                      aria-label={`View ${product.name}`}
+                    >
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 47vw, (max-width: 1024px) 31vw, 23vw"
+                        className="object-cover transition duration-500 group-hover:scale-[1.035]"
+                      />
+                    </Link>
 
                     <button
                       type="button"
                       onClick={() => toggleWishlist(product.id)}
-                      className={`absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white shadow ${
+                      className={`absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full bg-white shadow ${
                         saved ? "text-[#8e3b2c]" : "text-[#6a4a36] hover:text-[#8e3b2c]"
                       }`}
                       aria-label={`Save ${product.name}`}
@@ -451,8 +485,14 @@ export default function Home() {
                     Handmade by {product.maker}
                   </span>
 
-                  <h3 className="mt-3 font-[Georgia,serif] text-[17px]">{product.name}</h3>
-                  <p className="mt-1 text-[14px] font-semibold text-[#b7771d]">{product.price}</p>
+                  <Link href={`/products/${product.slug}`} className="block">
+                    <h3 className="mt-3 font-[Georgia,serif] text-[17px]">
+                      {product.name}
+                    </h3>
+                    <p className="mt-1 text-[14px] font-semibold text-[#b7771d]">
+                      {product.price}
+                    </p>
+                  </Link>
                 </article>
               );
             })}

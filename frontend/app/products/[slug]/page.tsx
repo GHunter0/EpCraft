@@ -15,6 +15,7 @@ type Product = {
   reviews: number;
   description: string;
   woodLabel: string;
+  sizeLabel: string;
   finishes: { name: string; className: string }[];
   sizes: string[];
   images: string[];
@@ -42,6 +43,7 @@ const products: Record<string, Product> = {
     description:
       "A timeless centerpiece handcrafted with traditional joinery, designed to last for generations. Each piece celebrates the natural variations and rich textures of premium solid wood.",
     woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
     finishes: [
       { name: "Walnut", className: "bg-[#986033]" },
       { name: "Honey", className: "bg-[#d0a05d]" },
@@ -80,6 +82,7 @@ const products: Record<string, Product> = {
     description:
       "A clean floating shelf with concealed mounting hardware, designed to bring warm natural texture to contemporary interiors.",
     woodLabel: "Wood Finish",
+    sizeLabel: "Shelf Size",
     finishes: [
       { name: "Natural", className: "bg-[#d9c09a]" },
       { name: "Honey", className: "bg-[#b77b39]" },
@@ -112,6 +115,7 @@ const products: Record<string, Product> = {
     description:
       "A sculptural serving bowl turned by hand to showcase the expressive grain and warmth of sustainably sourced teak.",
     woodLabel: "Wood Finish",
+    sizeLabel: "Bowl Size",
     finishes: [
       { name: "Natural", className: "bg-[#b57a3f]" },
       { name: "Golden", className: "bg-[#d19a4d]" },
@@ -140,6 +144,7 @@ const products: Record<string, Product> = {
     description:
       "A warm, compact bedside piece combining Scandinavian proportions with the lively grain of mango wood.",
     woodLabel: "Wood Finish",
+    sizeLabel: "Nightstand Size",
     finishes: [
       { name: "Honey", className: "bg-[#c39350]" },
       { name: "Natural", className: "bg-[#dfc39a]" },
@@ -168,6 +173,7 @@ const products: Record<string, Product> = {
     description:
       "A generous live-edge serving platter made for cheeses, breads and shared table moments.",
     woodLabel: "Wood Finish",
+    sizeLabel: "Platter Size",
     finishes: [
       { name: "Natural", className: "bg-[#d5b68d]" },
       { name: "Honey", className: "bg-[#c18b4a]" },
@@ -196,6 +202,7 @@ const products: Record<string, Product> = {
     description:
       "A coordinated walnut desk collection that organizes everyday tools while bringing calm craftsmanship to a workspace.",
     woodLabel: "Wood Finish",
+    sizeLabel: "Set Size",
     finishes: [
       { name: "Walnut", className: "bg-[#74482f]" },
       { name: "Natural", className: "bg-[#c39a70]" },
@@ -212,29 +219,379 @@ const products: Record<string, Product> = {
       "Hand-applied natural oil finish.",
     ],
   },
+
+  "walnut-dining-table": {
+    slug: "walnut-dining-table",
+    name: "Walnut Dining Table",
+    room: "Dining Room",
+    badge: "Solid American Walnut",
+    price: "Rs. 52,400",
+    rating: "4.8",
+    reviews: 24,
+    description:
+      "A substantial handcrafted dining table designed to become the warm, enduring centre of family meals and celebrations.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Table Size",
+    finishes: [
+      { name: "Walnut", className: "bg-[#7b4b2d]" },
+      { name: "Honey", className: "bg-[#c49355]" },
+      { name: "Espresso", className: "bg-[#3f2922]" },
+    ],
+    sizes: ["Six Seater", "Eight Seater", "Ten Seater"],
+    images: ["/epcraft/walnut-dining-table.jpg"],
+    detailsTitle: "A Table Made for Gathering",
+    detailsText:
+      "Crafted to celebrate the depth and movement of walnut grain, this dining table combines a generous surface with a strong, balanced base for everyday use.",
+    bullets: [
+      "Solid walnut construction.",
+      "Hand-applied protective oil finish.",
+      "Traditional joinery for long-term durability.",
+    ],
+  },
+
+  "oak-serving-board": {
+    slug: "oak-serving-board",
+    name: "Oak Serving Board",
+    room: "Kitchenware",
+    badge: "Solid White Oak",
+    price: "Rs. 3,120",
+    rating: "4.7",
+    reviews: 19,
+    description:
+      "A versatile oak board made for serving bread, cheese and shared snacks with a clean handcrafted finish.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Board Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#d8bd91]" },
+      { name: "Honey", className: "bg-[#bd8143]" },
+      { name: "Smoked", className: "bg-[#684735]" },
+    ],
+    sizes: ["Small", "Medium", "Large"],
+    images: ["/epcraft/oak-serving-board.jpg"],
+    detailsTitle: "Simple Craft for the Table",
+    detailsText:
+      "Shaped from solid oak and carefully sanded by hand, this serving board highlights the material's pale grain while remaining practical for everyday hosting.",
+    bullets: [
+      "Food-safe oil finish.",
+      "Solid oak construction.",
+      "Rounded hand-finished edges.",
+    ],
+  },
+
+  "cedar-wall-art": {
+    slug: "cedar-wall-art",
+    name: "Cedar Wall Art",
+    room: "Home Decor",
+    badge: "Handcrafted Cedar",
+    price: "Rs. 9,850",
+    rating: "4.9",
+    reviews: 27,
+    description:
+      "A geometric wall composition assembled from individually shaped cedar pieces to create warmth, depth and movement.",
+    woodLabel: "Wood Tone",
+    sizeLabel: "Artwork Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#b77b48]" },
+      { name: "Charred", className: "bg-[#2f2925]" },
+      { name: "Mixed", className: "bg-[#7b4d31]" },
+    ],
+    sizes: ["Medium", "Large", "Statement"],
+    images: ["/epcraft/cedar-wall-art.jpg"],
+    detailsTitle: "Geometry in Natural Wood",
+    detailsText:
+      "Each cedar segment is cut, arranged and finished by hand, creating a sculptural surface whose shadows change throughout the day.",
+    bullets: [
+      "Individually shaped cedar pieces.",
+      "Ready-to-hang mounting system.",
+      "Natural and charred wood tones.",
+    ],
+  },
+
+  "cherry-nightstand": {
+    slug: "cherry-nightstand",
+    name: "Cherry Nightstand",
+    room: "Bedroom",
+    badge: "Solid Cherry Wood",
+    price: "Rs. 11,200",
+    rating: "4.7",
+    reviews: 21,
+    description:
+      "A refined bedside table with practical storage, warm cherry tones and softly rounded handcrafted details.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Nightstand Size",
+    finishes: [
+      { name: "Natural Cherry", className: "bg-[#b66b3f]" },
+      { name: "Honey", className: "bg-[#ca8d4d]" },
+      { name: "Dark Cherry", className: "bg-[#663628]" },
+    ],
+    sizes: ["Compact", "Standard", "Wide"],
+    images: ["/epcraft/cherry-nightstand.jpg"],
+    detailsTitle: "Quiet Storage Beside the Bed",
+    detailsText:
+      "Built from solid cherry, this nightstand balances a light visual profile with useful bedside storage and durable drawer construction.",
+    bullets: [
+      "Solid cherry frame and drawer fronts.",
+      "Smooth hand-rubbed finish.",
+      "Soft-close drawer hardware.",
+    ],
+  },
+
+  "maple-bowl-set": {
+    slug: "maple-bowl-set",
+    name: "Maple Bowl Set",
+    room: "Kitchenware",
+    badge: "Hand-Turned Maple",
+    price: "Rs. 2,320",
+    rating: "4.8",
+    reviews: 30,
+    description:
+      "A nested set of smooth maple bowls, individually turned to bring natural warmth to serving and preparation.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Set Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#e0c79f]" },
+      { name: "Honey", className: "bg-[#c99657]" },
+      { name: "Warm Maple", className: "bg-[#aa6e3d]" },
+    ],
+    sizes: ["3-Piece Set", "4-Piece Set", "5-Piece Set"],
+    images: ["/epcraft/maple-bowl-set.jpg"],
+    detailsTitle: "Turned for Everyday Use",
+    detailsText:
+      "The bowls are shaped from maple and finished with a food-safe oil that preserves their pale grain and smooth tactile character.",
+    bullets: [
+      "Food-safe natural finish.",
+      "Nested space-saving design.",
+      "Individually hand-turned.",
+    ],
+  },
+
+  "ash-floating-shelf": {
+    slug: "ash-floating-shelf",
+    name: "Ash Floating Shelf",
+    room: "Living Room",
+    badge: "Solid Ash Wood",
+    price: "Rs. 4,450",
+    rating: "4.6",
+    reviews: 17,
+    description:
+      "A minimal floating shelf crafted from ash, with a clean profile and concealed wall-mounting system.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Shelf Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#dbc39e]" },
+      { name: "Whitewashed", className: "bg-[#eadfcd]" },
+      { name: "Smoked", className: "bg-[#706052]" },
+    ],
+    sizes: ['24" Wide', '36" Wide', '48" Wide'],
+    images: ["/epcraft/ash-floating-shelf.jpg"],
+    detailsTitle: "A Clean Line on the Wall",
+    detailsText:
+      "The Ash Floating Shelf pairs expressive grain with concealed hardware, allowing books, plants and objects to appear lightly supported.",
+    bullets: [
+      "Solid ash construction.",
+      "Concealed mounting hardware.",
+      "Hand-sanded matte finish.",
+    ],
+  },
+
+  "ebony-valet-tray": {
+    slug: "ebony-valet-tray",
+    name: "Ebony Valet Tray",
+    room: "Custom Gifts",
+    badge: "Premium Ebony",
+    price: "Rs. 5,880",
+    rating: "4.9",
+    reviews: 26,
+    description:
+      "A refined bedside or desk organizer created for watches, jewellery and everyday personal objects.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Tray Size",
+    finishes: [
+      { name: "Ebony", className: "bg-[#2b2421]" },
+      { name: "Walnut", className: "bg-[#70472f]" },
+      { name: "Natural", className: "bg-[#b68f6e]" },
+    ],
+    sizes: ["Compact", "Standard", "Large"],
+    images: ["/epcraft/ebony-valet-tray.jpg"],
+    detailsTitle: "Order for Everyday Essentials",
+    detailsText:
+      "Designed with dedicated spaces for personal items, this valet tray combines precise joinery with a rich dark surface and soft protective lining.",
+    bullets: [
+      "Hand-finished hardwood construction.",
+      "Soft-lined accessory compartments.",
+      "Designed for watches and jewellery.",
+    ],
+  },
+
+  "organic-desk-chair": {
+    slug: "organic-desk-chair",
+    name: "Organic Desk Chair",
+    room: "Home Office",
+    badge: "Sculpted Hardwood",
+    price: "Rs. 7,180",
+    rating: "4.7",
+    reviews: 20,
+    description:
+      "A comfortable desk chair combining sculpted wooden supports with a soft upholstered seat and an ergonomic silhouette.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Chair Size",
+    finishes: [
+      { name: "Natural Oak", className: "bg-[#c49b6e]" },
+      { name: "Walnut", className: "bg-[#6c4631]" },
+      { name: "Dark", className: "bg-[#3e3029]" },
+    ],
+    sizes: ["Standard", "Tall"],
+    images: ["/epcraft/organic-desk-chair.jpg"],
+    detailsTitle: "Crafted Comfort for Focus",
+    detailsText:
+      "Curved wooden elements and supportive upholstery create a desk chair that feels warm and residential while remaining practical for daily work.",
+    bullets: [
+      "Sculpted solid-wood frame.",
+      "Supportive upholstered seat and back.",
+      "Height-adjustable swivel base.",
+    ],
+  },
+
+
+  "curated-dining-chairs": {
+    slug: "curated-dining-chairs",
+    name: "Curated Dining Chairs",
+    room: "Dining Room",
+    badge: "Solid American Walnut",
+    price: "Rs. 450.00 each",
+    rating: "4.8",
+    reviews: 17,
+    description:
+      "A refined dining chair with a solid hardwood frame, gently curved backrest and balanced proportions designed for long, comfortable meals.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Set Size",
+    finishes: [
+      { name: "Walnut", className: "bg-[#7a4d31]" },
+      { name: "Natural", className: "bg-[#c59b6f]" },
+      { name: "Espresso", className: "bg-[#3f2a22]" },
+    ],
+    sizes: ["Single Chair", "Set of 2", "Set of 4", "Set of 6"],
+    images: ["/epcraft/product-detail/curated-dining-chairs.jpg"],
+    detailsTitle: "Balanced Comfort at the Table",
+    detailsText:
+      "Each chair is shaped to complement handcrafted dining tables while remaining comfortable for everyday use. The frame is joined and finished by hand to preserve strength and natural character.",
+    bullets: [
+      "Solid hardwood frame.",
+      "Comfortable curved back support.",
+      "Hand-applied natural oil finish.",
+    ],
+  },
+
+  "organic-form-bowl": {
+    slug: "organic-form-bowl",
+    name: "Organic Form Bowl",
+    room: "Kitchenware",
+    badge: "Hand-Turned Hardwood",
+    price: "Rs. 1,200.00",
+    rating: "4.9",
+    reviews: 28,
+    description:
+      "A softly sculpted wooden bowl designed for fruit, serving and display, with each curve shaped to highlight the natural grain.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Bowl Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#bc8651]" },
+      { name: "Honey", className: "bg-[#d2a25f]" },
+      { name: "Dark", className: "bg-[#5b3b2c]" },
+    ],
+    sizes: ["Small", "Medium", "Large"],
+    images: ["/epcraft/product-detail/organic-form-bowl.jpg"],
+    detailsTitle: "Sculpted by Hand",
+    detailsText:
+      "The Organic Form Bowl is turned and sanded by hand, allowing small variations in shape and grain to make every piece unique.",
+    bullets: [
+      "Food-safe natural finish.",
+      "Individually hand-turned.",
+      "Made from sustainably sourced hardwood.",
+    ],
+  },
+
+  "slatted-oak-credenza": {
+    slug: "slatted-oak-credenza",
+    name: "Slatted Oak Credenza",
+    room: "Living Room",
+    badge: "Solid White Oak",
+    price: "Rs. 2,100.00",
+    rating: "4.7",
+    reviews: 21,
+    description:
+      "A low-profile storage credenza with rhythmic slatted doors, warm oak grain and a clean modern silhouette.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Credenza Size",
+    finishes: [
+      { name: "Natural Oak", className: "bg-[#caa477]" },
+      { name: "Honey Oak", className: "bg-[#a96f3f]" },
+      { name: "Smoked Oak", className: "bg-[#594239]" },
+    ],
+    sizes: ["Compact", "Standard", "Wide"],
+    images: ["/epcraft/product-detail/slatted-oak-credenza.jpg"],
+    detailsTitle: "Storage with Quiet Detail",
+    detailsText:
+      "The slatted facade adds texture while keeping the overall form calm and architectural. Adjustable shelving provides practical storage for living and dining spaces.",
+    bullets: [
+      "Solid oak frame and slatted doors.",
+      "Adjustable interior shelving.",
+      "Soft-close concealed hinges.",
+    ],
+  },
+
+  "arc-floor-lamp": {
+    slug: "arc-floor-lamp",
+    name: "The Arc Floor Lamp",
+    room: "Lighting",
+    badge: "Wood and Brass",
+    price: "Rs. 580.00",
+    rating: "4.6",
+    reviews: 14,
+    description:
+      "A sculptural floor lamp with a graceful wooden arc and warm focused light, designed to soften reading corners and living spaces.",
+    woodLabel: "Wood Finish",
+    sizeLabel: "Lamp Size",
+    finishes: [
+      { name: "Natural", className: "bg-[#c79d70]" },
+      { name: "Walnut", className: "bg-[#714a32]" },
+      { name: "Dark", className: "bg-[#3a2a24]" },
+    ],
+    sizes: ["Standard"],
+    images: ["/epcraft/product-detail/arc-floor-lamp.jpg"],
+    detailsTitle: "Light with a Crafted Presence",
+    detailsText:
+      "The Arc Floor Lamp combines a slender handcrafted wooden stem with a warm shade and stable weighted base, creating functional lighting with a sculptural profile.",
+    bullets: [
+      "Hand-shaped wooden arc.",
+      "Warm ambient light.",
+      "Stable weighted base.",
+    ],
+  },
+
 };
 
 const recommendations: Recommendation[] = [
   {
-    slug: "modern-heirloom-dining-table",
+    slug: "curated-dining-chairs",
     name: "Curated Dining Chairs",
     price: "Rs. 450.00 each",
     image: "/epcraft/product-detail/curated-dining-chairs.jpg",
   },
   {
-    slug: "sculptural-teak-serving-bowl",
+    slug: "organic-form-bowl",
     name: "Organic Form Bowl",
     price: "Rs. 1,200.00",
     image: "/epcraft/product-detail/organic-form-bowl.jpg",
   },
   {
-    slug: "nordic-mango-nightstand",
+    slug: "slatted-oak-credenza",
     name: "Slatted Oak Credenza",
     price: "Rs. 2,100.00",
     image: "/epcraft/product-detail/slatted-oak-credenza.jpg",
   },
   {
-    slug: "minimalist-oak-floating-shelf",
+    slug: "arc-floor-lamp",
     name: "The Arc Floor Lamp",
     price: "Rs. 580.00",
     image: "/epcraft/product-detail/arc-floor-lamp.jpg",
@@ -524,7 +881,7 @@ export default function ProductDetailPage() {
               </div>
 
               <label className="mt-7 block text-[13px] font-semibold text-[#46382f]">
-                Table Size
+                {product.sizeLabel}
                 <select
                   value={selectedSize}
                   onChange={(event) => setSelectedSize(event.target.value)}
