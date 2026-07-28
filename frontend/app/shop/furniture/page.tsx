@@ -6,6 +6,7 @@ import { FormEvent, useMemo, useState } from "react";
 
 type Product = {
   id: number;
+  slug: string;
   name: string;
   subtitle: string;
   price: number;
@@ -18,6 +19,7 @@ type Product = {
 const products: Product[] = [
   {
     id: 1,
+    slug: "modern-heirloom-dining-table",
     name: "Modern Heirloom Dining Table",
     subtitle: "Premium American Walnut",
     price: 3250,
@@ -28,6 +30,7 @@ const products: Product[] = [
   },
   {
     id: 2,
+    slug: "minimalist-oak-floating-shelf",
     name: "Minimalist Oak Floating Shelf",
     subtitle: "Natural Matte Finish",
     price: 4200,
@@ -38,6 +41,7 @@ const products: Product[] = [
   },
   {
     id: 3,
+    slug: "sculptural-teak-serving-bowl",
     name: "Sculptural Teak Serving Bowl",
     subtitle: "Artisanal Hand-Turned",
     price: 1850,
@@ -48,6 +52,7 @@ const products: Product[] = [
   },
   {
     id: 4,
+    slug: "nordic-mango-nightstand",
     name: "Nordic Mango Nightstand",
     subtitle: "Honey Gold Finish",
     price: 6800,
@@ -58,6 +63,7 @@ const products: Product[] = [
   },
   {
     id: 5,
+    slug: "artisan-serving-platter",
     name: "Artisan Serving Platter",
     subtitle: "Live Edge White Oak",
     price: 1200,
@@ -68,6 +74,7 @@ const products: Product[] = [
   },
   {
     id: 6,
+    slug: "executive-desk-set",
     name: "Executive Desk Set",
     subtitle: "Black Walnut Collection",
     price: 2950,
@@ -441,23 +448,29 @@ export default function FurniturePage() {
                               : "relative min-h-[290px] overflow-hidden bg-[#e9ddce]"
                           }
                         >
-                          <Image
-                            src={product.image}
-                            alt={product.name}
-                            fill
-                            quality={95}
-                            sizes={
-                              viewMode === "grid"
-                                ? "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                                : "280px"
-                            }
-                            className="object-cover transition duration-500 group-hover:scale-[1.025]"
-                          />
+                          <Link
+                            href={`/products/${product.slug}`}
+                            className="absolute inset-0 z-10 block"
+                            aria-label={`View ${product.name}`}
+                          >
+                            <Image
+                              src={product.image}
+                              alt={product.name}
+                              fill
+                              quality={95}
+                              sizes={
+                                viewMode === "grid"
+                                  ? "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                                  : "280px"
+                              }
+                              className="object-cover transition duration-500 group-hover:scale-[1.025]"
+                            />
+                          </Link>
 
                           <button
                             type="button"
                             onClick={() => toggleWishlist(product.id)}
-                            className={`absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white/95 shadow-md ${
+                            className={`absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/95 shadow-md ${
                               saved ? "text-[#c3312f]" : "text-[#6a4a36] hover:text-[#c3312f]"
                             }`}
                             aria-label={`Save ${product.name}`}
@@ -473,9 +486,20 @@ export default function FurniturePage() {
                               : "flex flex-col justify-center px-8 py-7"
                           }
                         >
-                          <h2 className="font-[Georgia,serif] text-[18px]">{product.name}</h2>
-                          <p className="mt-2 text-[15px] text-[#5f554d]">{product.subtitle}</p>
-                          <p className="mt-4 font-[Georgia,serif] text-[16px]">{product.priceLabel}</p>
+                          <Link
+                            href={`/products/${product.slug}`}
+                            className="block"
+                          >
+                            <h2 className="font-[Georgia,serif] text-[18px]">
+                              {product.name}
+                            </h2>
+                            <p className="mt-2 text-[15px] text-[#5f554d]">
+                              {product.subtitle}
+                            </p>
+                            <p className="mt-4 font-[Georgia,serif] text-[16px]">
+                              {product.priceLabel}
+                            </p>
+                          </Link>
                         </div>
                       </article>
                     );
