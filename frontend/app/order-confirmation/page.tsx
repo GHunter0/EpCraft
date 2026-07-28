@@ -614,9 +614,7 @@ export default function OrderConfirmationPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    window.alert(
-                      `Tracking for ${displayOrderNumber} will be available on the Order History page.`,
-                    )
+                    router.push("/account/orders")
                   }
                   className="min-w-[220px] rounded-full bg-[#5a2e14] px-8 py-4 text-[14px] font-semibold text-white shadow-lg transition hover:bg-[#47230e]"
                 >
