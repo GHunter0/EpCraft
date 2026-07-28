@@ -375,11 +375,12 @@ export default function FurniturePage() {
             </button>
 
             <button
-              type="button"
-              className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
-              aria-label="Cart"
+                type="button"
+                onClick={() => router.push("/cart")}
+                className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
+                aria-label="Cart"
             >
-              <CartIcon />
+                <CartIcon />
             </button>
 
             <button

@@ -197,11 +197,17 @@ export default function Home() {
   );
 
   function toggleWishlist(productId: number) {
+    const alreadySaved = wishlist.includes(productId);
+
     setWishlist((current) =>
       current.includes(productId)
-        ? current.filter((id) => id !== productId)
+       ? current.filter((id) => id !== productId)
         : [...current, productId],
     );
+
+    if (!alreadySaved) {
+      setWishlistOpen(true);
+    }
   }
 
   function scrollToProducts() {
@@ -337,16 +343,11 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={() => setWishlistOpen(true)}
-              className="relative rounded-full p-2 transition hover:bg-[#f1e5d6]"
-              aria-label="Wishlist"
+              onClick={() => router.push("/cart")}
+              className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
+              aria-label="Cart"
             >
               <CartIcon />
-              {wishlist.length > 0 && (
-                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#5a2e14] px-1 text-[10px] text-white">
-                  {wishlist.length}
-                </span>
-              )}
             </button>
 
             <button

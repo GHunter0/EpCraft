@@ -30,7 +30,17 @@ type Recommendation = {
   price: string;
   image: string;
 };
+type StoredCartItem = {
+  id: string;
+  slug: string;
+  name: string;
+  details: string;
+  price: number;
+  quantity: number;
+  image: string;
+};
 
+const CART_STORAGE_KEY = "epcraft-cart";
 const products: Record<string, Product> = {
   "modern-heirloom-dining-table": {
     slug: "modern-heirloom-dining-table",
@@ -875,7 +885,43 @@ export default function ProductDetailPage() {
     setCartMessage("");
     setSelectedSize(product?.sizes[0] ?? "");
   }, [slug, product]);
+  useEffect(() => {
+    function updateCartCount() {
+        try {
+            const saved = window.localStorage.getItem(CART_STORAGE_KEY);
 
+            const items: StoredCartItem[] = saved
+                ? JSON.parse(saved)
+                : [];
+
+            setCartCount(
+              items.reduce(
+                (total, item) =>
+                    total + Number(item.quantity || 0),
+                0,
+                ),
+              );
+            } catch {
+                setCartCount(0);
+            }
+        }
+
+        updateCartCount();
+
+        window.addEventListener("storage", updateCartCount);
+        window.addEventListener(
+            "epcraft-cart-updated",
+            updateCartCount,
+        );
+
+        return () => {
+            window.removeEventListener("storage", updateCartCount);
+            window.removeEventListener(
+                "epcraft-cart-updated",
+                updateCartCount,
+            );
+        };
+  }, []);
   const selectedMainImage = useMemo(
     () => product?.images[selectedImage] ?? product?.images[0] ?? "",
     [product, selectedImage],
@@ -919,9 +965,82 @@ export default function ProductDetailPage() {
   }
 
   function addToCart() {
-    setCartCount((current) => current + quantity);
-    setCartMessage(`${quantity} item${quantity > 1 ? "s" : ""} added to cart.`);
+   if (!product) {
+    return;
   }
+
+
+  const finishName =
+    product.finishes[selectedFinish]?.name ??
+    product.finishes[0]?.name ??
+    "Standard";
+
+  const itemId =
+    `${product.slug}::${finishName}::${selectedSize}`;
+
+  const numericPrice =
+    Number(product.price.replace(/[^0-9.]/g, "")) || 0;
+
+  let currentItems: StoredCartItem[] = [];
+
+  try {
+    const saved =
+      window.localStorage.getItem(CART_STORAGE_KEY);
+
+    currentItems = saved ? JSON.parse(saved) : [];
+  } catch {
+    currentItems = [];
+  }
+
+  const existingItem = currentItems.find(
+    (item) => item.id === itemId,
+  );
+
+  const nextItems = existingItem
+    ? currentItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              quantity: item.quantity + quantity,
+            }
+          : item,
+      )
+    : [
+        ...currentItems,
+        {
+          id: itemId,
+          slug: product.slug,
+          name: product.name,
+          details:
+            `${product.woodLabel}: ${finishName} • ` +
+            `${product.sizeLabel}: ${selectedSize}`,
+          price: numericPrice,
+          quantity,
+          image: product.images[0],
+        },
+      ];
+
+  window.localStorage.setItem(
+    CART_STORAGE_KEY,
+    JSON.stringify(nextItems),
+  );
+
+  window.dispatchEvent(
+    new Event("epcraft-cart-updated"),
+  );
+
+  setCartCount(
+    nextItems.reduce(
+      (total, item) =>
+        total + Number(item.quantity || 0),
+      0,
+    ),
+  );
+
+  setCartMessage(
+    `${quantity} item${quantity > 1 ? "s" : ""} added to your cart.`,
+  );
+}
 
   return (
     <main className="min-h-screen bg-[#fbf5ec] font-[Arial,sans-serif] text-[#5a321b]">
@@ -1005,7 +1124,7 @@ export default function ProductDetailPage() {
                     <SearchIcon />
                 </button>
 
-            <button type="button" className="relative rounded-full p-2 transition hover:bg-[#f1e5d6]" aria-label="Cart">
+            <button type="button" onClick={() => router.push("/cart")} className="relative rounded-full p-2 transition hover:bg-[#f1e5d6]" aria-label="Cart">
               <CartIcon />
               {cartCount > 0 && (
                 <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#5a2e14] px-1 text-[10px] text-white">
