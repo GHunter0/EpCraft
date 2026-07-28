@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
 type Product = {
@@ -234,13 +235,12 @@ export default function Home() {
           </a>
 
           <nav className="hidden items-center gap-12 text-[18px] lg:flex">
-            <button
-              type="button"
-              onClick={() => goToSection("Shop", "products")}
+            <Link
+              href="/shop/furniture"
               className={navClass("Shop")}
             >
               Shop
-            </button>
+            </Link>
 
             <button
               type="button"
@@ -377,10 +377,13 @@ export default function Home() {
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-12 md:grid-cols-4 lg:gap-x-16">
             {categories.map((category) => (
-              <button
+              <Link
                 key={category.name}
-                type="button"
-                onClick={scrollToProducts}
+                href={
+                  category.name === "Furniture"
+                    ? "/shop/furniture"
+                    : "#products"
+                }
                 className="group flex flex-col items-center"
               >
                 <div className="relative aspect-square w-full max-w-[205px] overflow-hidden rounded-full shadow-[0_14px_30px_rgba(72,42,20,0.14)] transition duration-300 group-hover:-translate-y-1">
@@ -393,7 +396,7 @@ export default function Home() {
                   />
                 </div>
                 <span className="mt-5 font-[Georgia,serif] text-[17px]">{category.name}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
@@ -408,13 +411,12 @@ export default function Home() {
               <p className="mt-2 text-[14px] text-[#71655c]">Tactile pieces for a modern home.</p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => window.alert("Full product catalogue coming soon.")}
+            <Link
+              href="/shop/furniture"
               className="text-[14px] font-semibold text-[#bd8128] transition hover:text-[#8f5d17]"
             >
               View All Products
-            </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-x-5 gap-y-14 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-7">
@@ -475,6 +477,7 @@ export default function Home() {
                 src="/epcraft/eleanor-rigby.png"
                 alt="Eleanor Rigby"
                 fill
+                sizes="44px"
                 className="object-cover"
               />
             </div>
