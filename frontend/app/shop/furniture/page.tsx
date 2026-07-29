@@ -385,6 +385,7 @@ export default function FurniturePage() {
 
             <button
               type="button"
+              onClick={() => router.push("/account")}
               className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
               aria-label="Account"
             >

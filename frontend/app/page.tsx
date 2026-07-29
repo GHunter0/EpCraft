@@ -352,7 +352,7 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={() => window.alert("Account page will be connected later.")}
+              onClick={() => router.push("/account")}
               className="rounded-full p-2 transition hover:bg-[#f1e5d6]"
               aria-label="Account"
             >

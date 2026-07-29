@@ -380,7 +380,7 @@ function SearchResultsContent() {
             <button type="button" onClick={() => router.push("/cart")} className="rounded-full p-2 hover:bg-[#f1e5d6]" aria-label="Cart">
               <CartIcon />
             </button>
-            <button type="button" className="rounded-full p-2 hover:bg-[#f1e5d6]" aria-label="Account">
+            <button type="button" onClick={() => router.push("/account")} className="rounded-full p-2 hover:bg-[#f1e5d6]" aria-label="Account">
               <UserIcon />
             </button>
           </div>
