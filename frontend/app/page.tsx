@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type Product = {
   id: number;
@@ -11,6 +11,15 @@ type Product = {
   name: string;
   maker: string;
   price: string;
+  image: string;
+};
+
+type WishlistProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
   image: string;
 };
 
@@ -89,6 +98,37 @@ const products: Product[] = [
     image: "/epcraft/organic-desk-chair.jpg",
   },
 ];
+
+const WISHLIST_STORAGE_KEY = "epcraft-wishlist-items";
+
+const TEMPORARY_WISHLIST_IDS = [
+  "black-walnut-sculpted-bowl",
+  "white-oak-coaster-set",
+  "figured-maple-serving-board",
+  "cherry-wood-floating-shelf",
+  "walnut-mill-duo",
+  "birch-tray-with-brass-inlay",
+];
+
+function parseProductPrice(priceLabel: string) {
+  const numericValue = Number(
+    priceLabel.replace(/[^0-9.]/g, ""),
+  );
+
+  return Number.isFinite(numericValue)
+    ? numericValue
+    : 0;
+}
+
+function formatWishlistPrice(value: number) {
+  return `Rs. ${Number(value || 0).toLocaleString(
+    "en-US",
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    },
+  )}`;
+}
 
 function SearchIcon() {
   return (
@@ -188,26 +228,125 @@ export default function Home() {
   const [searchText, setSearchText] = useState("");
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [wishlistProducts, setWishlistProducts] =
+    useState<WishlistProduct[]>([]);
   const [newsletterMessage, setNewsletterMessage] = useState("");
 
-  const savedProducts = useMemo(
-    () => products.filter((product) => wishlist.includes(product.id)),
-    [wishlist],
-  );
+  useEffect(() => {
+    function loadWishlist() {
+      try {
+        const savedWishlist = window.localStorage.getItem(
+          WISHLIST_STORAGE_KEY,
+        );
 
-  function toggleWishlist(productId: number) {
-    const alreadySaved = wishlist.includes(productId);
+        const parsedWishlist: WishlistProduct[] =
+          savedWishlist ? JSON.parse(savedWishlist) : [];
 
-    setWishlist((current) =>
-      current.includes(productId)
-       ? current.filter((id) => id !== productId)
-        : [...current, productId],
+        const realWishlist = Array.isArray(parsedWishlist)
+          ? parsedWishlist.filter(
+              (item) =>
+                item &&
+                !TEMPORARY_WISHLIST_IDS.includes(
+                  String(item.id),
+                ),
+            )
+          : [];
+
+        setWishlistProducts(realWishlist);
+
+        window.localStorage.setItem(
+          WISHLIST_STORAGE_KEY,
+          JSON.stringify(realWishlist),
+        );
+      } catch {
+        setWishlistProducts([]);
+
+        window.localStorage.setItem(
+          WISHLIST_STORAGE_KEY,
+          "[]",
+        );
+      }
+    }
+
+    loadWishlist();
+
+    window.addEventListener(
+      "storage",
+      loadWishlist,
     );
+    window.addEventListener(
+      "epcraft-wishlist-updated",
+      loadWishlist,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "storage",
+        loadWishlist,
+      );
+      window.removeEventListener(
+        "epcraft-wishlist-updated",
+        loadWishlist,
+      );
+    };
+  }, []);
+
+  function saveWishlist(
+    nextWishlist: WishlistProduct[],
+  ) {
+    setWishlistProducts(nextWishlist);
+
+    window.localStorage.setItem(
+      WISHLIST_STORAGE_KEY,
+      JSON.stringify(nextWishlist),
+    );
+
+    window.dispatchEvent(
+      new Event("epcraft-wishlist-updated"),
+    );
+  }
+
+  function toggleWishlist(product: Product) {
+    const alreadySaved = wishlistProducts.some(
+      (item) =>
+        item.id === product.slug ||
+        item.slug === product.slug,
+    );
+
+    const wishlistProduct: WishlistProduct = {
+      id: product.slug,
+      slug: product.slug,
+      name: product.name,
+      description: `Handmade by ${product.maker}`,
+      price: parseProductPrice(product.price),
+      image: product.image,
+    };
+
+    const nextWishlist = alreadySaved
+      ? wishlistProducts.filter(
+          (item) =>
+            item.id !== product.slug &&
+            item.slug !== product.slug,
+        )
+      : [...wishlistProducts, wishlistProduct];
+
+    saveWishlist(nextWishlist);
 
     if (!alreadySaved) {
       setWishlistOpen(true);
     }
+  }
+
+  function removeFromWishlist(
+    product: WishlistProduct,
+  ) {
+    const nextWishlist = wishlistProducts.filter(
+      (item) =>
+        item.id !== product.id &&
+        item.slug !== product.slug,
+    );
+
+    saveWishlist(nextWishlist);
   }
 
   function scrollToProducts() {
@@ -484,7 +623,11 @@ export default function Home() {
 
           <div className="grid grid-cols-2 gap-x-5 gap-y-14 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-7">
             {products.map((product) => {
-              const saved = wishlist.includes(product.id);
+              const saved = wishlistProducts.some(
+                (item) =>
+                  item.id === product.slug ||
+                  item.slug === product.slug,
+              );
 
               return (
                 <article key={product.id} className="group text-center">
@@ -506,7 +649,7 @@ export default function Home() {
 
                     <button
                       type="button"
-                      onClick={() => toggleWishlist(product.id)}
+                      onClick={() => toggleWishlist(product)}
                       className={`absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full bg-white shadow ${
                         saved ? "text-[#8e3b2c]" : "text-[#6a4a36] hover:text-[#8e3b2c]"
                       }`}
@@ -720,24 +863,26 @@ export default function Home() {
               </button>
             </div>
 
-            {savedProducts.length === 0 ? (
+            {wishlistProducts.length === 0 ? (
               <p className="mt-10 text-[#6a5c52]">
                 Your wishlist is empty. Press a heart button to save a product.
               </p>
             ) : (
               <div className="mt-8 space-y-4">
-                {savedProducts.map((product) => (
+                {wishlistProducts.map((product) => (
                   <div key={product.id} className="flex items-center gap-4 rounded-2xl bg-white p-3">
                     <div className="relative h-20 w-16 overflow-hidden rounded-lg">
                       <Image src={product.image} alt={product.name} fill className="object-cover" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-[Georgia,serif] text-[17px]">{product.name}</p>
-                      <p className="text-[14px] text-[#b5751d]">{product.price}</p>
+                      <p className="text-[14px] text-[#b5751d]">
+                        {formatWishlistPrice(product.price)}
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => toggleWishlist(product.id)}
+                      onClick={() => removeFromWishlist(product)}
                       className="p-2 text-[#8b3f2b]"
                     >
                       <HeartIcon filled />

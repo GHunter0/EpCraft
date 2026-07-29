@@ -400,7 +400,17 @@ return (
                 key={item.label}
                 type="button"
                 onClick={() => {
-                  if (!active) {
+                  if (item.label === "Overview") {
+                    router.push("/account");
+                    return;
+                  }
+
+                  if (item.label === "Wishlist") {
+                    router.push("/account/wishlist");
+                    return;
+                  }
+
+                  if (item.label !== "Orders") {
                     window.alert(
                       `${item.label} page will be connected later.`,
                     );

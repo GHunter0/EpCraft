@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Product = {
   id: number;
@@ -14,6 +14,15 @@ type Product = {
   priceLabel: string;
   category: string;
   woodType: string;
+  image: string;
+};
+
+type WishlistProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
   image: string;
 };
 
@@ -84,6 +93,17 @@ const products: Product[] = [
     woodType: "Walnut",
     image: "/epcraft/furniture/executive-desk-set.jpg",
   },
+];
+
+const WISHLIST_STORAGE_KEY = "epcraft-wishlist-items";
+
+const TEMPORARY_WISHLIST_IDS = [
+  "black-walnut-sculpted-bowl",
+  "white-oak-coaster-set",
+  "figured-maple-serving-board",
+  "cherry-wood-floating-shelf",
+  "walnut-mill-duo",
+  "birch-tray-with-brass-inlay",
 ];
 
 const categoryOptions = ["Furniture", "Decor", "Kitchenware", "Custom Gifts"];
@@ -217,9 +237,44 @@ export default function FurniturePage() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("best");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [wishlist, setWishlist] = useState<number[]>([3]);
+  const [wishlistProducts, setWishlistProducts] =
+    useState<WishlistProduct[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [newsletterMessage, setNewsletterMessage] = useState("");
+
+  useEffect(() => {
+    try {
+      const savedWishlist = window.localStorage.getItem(
+        WISHLIST_STORAGE_KEY,
+      );
+
+      const parsedWishlist: WishlistProduct[] =
+        savedWishlist ? JSON.parse(savedWishlist) : [];
+
+      const realWishlist = Array.isArray(parsedWishlist)
+        ? parsedWishlist.filter(
+            (item) =>
+              !TEMPORARY_WISHLIST_IDS.includes(
+                String(item.id),
+              ),
+          )
+        : [];
+
+      setWishlistProducts(realWishlist);
+
+      window.localStorage.setItem(
+        WISHLIST_STORAGE_KEY,
+        JSON.stringify(realWishlist),
+      );
+    } catch {
+      setWishlistProducts([]);
+
+      window.localStorage.setItem(
+        WISHLIST_STORAGE_KEY,
+        "[]",
+      );
+    }
+  }, []);
 
   function toggleValue(
     value: string,
@@ -257,11 +312,39 @@ export default function FurniturePage() {
     });
   }, [selectedCategories, selectedWoods, filtersActive, maximumPrice, sortBy]);
 
-  function toggleWishlist(productId: number) {
-    setWishlist((current) =>
-      current.includes(productId)
-        ? current.filter((id) => id !== productId)
-        : [...current, productId],
+  function toggleWishlist(product: Product) {
+    const alreadySaved = wishlistProducts.some(
+      (item) =>
+        item.id === product.slug ||
+        item.slug === product.slug,
+    );
+
+    const wishlistProduct: WishlistProduct = {
+      id: product.slug,
+      slug: product.slug,
+      name: product.name,
+      description: product.subtitle,
+      price: product.price,
+      image: product.image,
+    };
+
+    const nextWishlist = alreadySaved
+      ? wishlistProducts.filter(
+          (item) =>
+            item.id !== product.slug &&
+            item.slug !== product.slug,
+        )
+      : [...wishlistProducts, wishlistProduct];
+
+    setWishlistProducts(nextWishlist);
+
+    window.localStorage.setItem(
+      WISHLIST_STORAGE_KEY,
+      JSON.stringify(nextWishlist),
+    );
+
+    window.dispatchEvent(
+      new Event("epcraft-wishlist-updated"),
     );
   }
   function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -503,7 +586,11 @@ export default function FurniturePage() {
                   }
                 >
                   {filteredProducts.map((product) => {
-                    const saved = wishlist.includes(product.id);
+                    const saved = wishlistProducts.some(
+                      (item) =>
+                        item.id === product.slug ||
+                        item.slug === product.slug,
+                    );
 
                     return (
                       <article
@@ -542,11 +629,15 @@ export default function FurniturePage() {
 
                           <button
                             type="button"
-                            onClick={() => toggleWishlist(product.id)}
+                            onClick={() => toggleWishlist(product)}
                             className={`absolute right-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/95 shadow-md ${
                               saved ? "text-[#c3312f]" : "text-[#6a4a36] hover:text-[#c3312f]"
                             }`}
-                            aria-label={`Save ${product.name}`}
+                            aria-label={
+                              saved
+                                ? `Remove ${product.name} from wishlist`
+                                : `Add ${product.name} to wishlist`
+                            }
                           >
                             <HeartIcon filled={saved} />
                           </button>

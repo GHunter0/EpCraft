@@ -403,16 +403,21 @@ function handleNewsletter(
                 key={item.label}
                 type="button"
                 onClick={() => {
-                  if (item.label === "Orders") {
-                    router.push("/account/orders");
-                    return;
-                  }
+                    if (item.label === "Orders") {
+                        router.push("/account/orders");
+                        return;
+                    }
 
-                  if (!active) {
-                    window.alert(
-                      `${item.label} page will be connected later.`,
-                    );
-                  }
+                    if (item.label === "Wishlist") {
+                        router.push("/account/wishlist");
+                    return;
+                    }
+
+                    if (item.label !== "Overview") {
+                        window.alert(
+                            `${item.label} page will be connected later.`,
+                        );
+                    }
                 }}
                 className={`flex w-full items-center gap-4 rounded-lg px-4 py-4 text-left text-[16px] font-semibold transition ${
                   active

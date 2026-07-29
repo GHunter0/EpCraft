@@ -40,7 +40,17 @@ type StoredCartItem = {
   image: string;
 };
 
+type WishlistProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+};
+
 const CART_STORAGE_KEY = "epcraft-cart";
+const WISHLIST_STORAGE_KEY = "epcraft-wishlist-items";
 function getNumericPrice(value: string | number) {
   if (typeof value === "number") {
     return value;
@@ -822,6 +832,22 @@ function UserIcon() {
   );
 }
 
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <path d="M20.8 4.8a5.3 5.3 0 0 0-7.5 0L12 6.1l-1.3-1.3a5.3 5.3 0 0 0-7.5 7.5L12 21l8.8-8.7a5.3 5.3 0 0 0 0-7.5Z" />
+    </svg>
+  );
+}
+
 function MailIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-5 w-5">
@@ -887,12 +913,16 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState("Description");
   const [chatOpen, setChatOpen] = useState(false);
   const [newsletterMessage, setNewsletterMessage] = useState("");
+  const [wishlistProducts, setWishlistProducts] =
+    useState<WishlistProduct[]>([]);
+  const [wishlistMessage, setWishlistMessage] = useState("");
 
   useEffect(() => {
     setSelectedImage(0);
     setSelectedFinish(0);
     setQuantity(1);
     setCartMessage("");
+    setWishlistMessage("");
     setSelectedSize(product?.sizes[0] ?? "");
   }, [slug, product]);
   useEffect(() => {
@@ -932,10 +962,65 @@ export default function ProductDetailPage() {
             );
         };
   }, []);
+
+  useEffect(() => {
+    function loadWishlist() {
+      try {
+        const savedWishlist = window.localStorage.getItem(
+          WISHLIST_STORAGE_KEY,
+        );
+
+        const parsedWishlist: WishlistProduct[] =
+          savedWishlist ? JSON.parse(savedWishlist) : [];
+
+        const validWishlist = Array.isArray(parsedWishlist)
+          ? parsedWishlist.filter(
+              (item) =>
+                item &&
+                typeof item.slug === "string" &&
+                item.slug.length > 0,
+            )
+          : [];
+
+        setWishlistProducts(validWishlist);
+      } catch {
+        setWishlistProducts([]);
+      }
+    }
+
+    loadWishlist();
+
+    window.addEventListener("storage", loadWishlist);
+    window.addEventListener(
+      "epcraft-wishlist-updated",
+      loadWishlist,
+    );
+
+    return () => {
+      window.removeEventListener("storage", loadWishlist);
+      window.removeEventListener(
+        "epcraft-wishlist-updated",
+        loadWishlist,
+      );
+    };
+  }, []);
+
   const selectedMainImage = useMemo(
     () => product?.images[selectedImage] ?? product?.images[0] ?? "",
     [product, selectedImage],
   );
+
+  const isProductSaved = useMemo(() => {
+    if (!product) {
+      return false;
+    }
+
+    return wishlistProducts.some(
+      (item) =>
+        item.id === product.slug ||
+        item.slug === product.slug,
+    );
+  }, [product, wishlistProducts]);
 
   if (!product) {
     return (
@@ -972,6 +1057,52 @@ export default function ProductDetailPage() {
 
     setNewsletterMessage("Thank you. You are now subscribed.");
     event.currentTarget.reset();
+  }
+
+  function toggleWishlist() {
+    if (!product) {
+      return;
+    }
+
+    const alreadySaved = wishlistProducts.some(
+      (item) =>
+        item.id === product.slug ||
+        item.slug === product.slug,
+    );
+
+    const wishlistProduct: WishlistProduct = {
+      id: product.slug,
+      slug: product.slug,
+      name: product.name,
+      description: product.badge,
+      price: getNumericPrice(product.price),
+      image: product.images[0],
+    };
+
+    const nextWishlist = alreadySaved
+      ? wishlistProducts.filter(
+          (item) =>
+            item.id !== product.slug &&
+            item.slug !== product.slug,
+        )
+      : [...wishlistProducts, wishlistProduct];
+
+    setWishlistProducts(nextWishlist);
+
+    window.localStorage.setItem(
+      WISHLIST_STORAGE_KEY,
+      JSON.stringify(nextWishlist),
+    );
+
+    window.dispatchEvent(
+      new Event("epcraft-wishlist-updated"),
+    );
+
+    setWishlistMessage(
+      alreadySaved
+        ? `${product.name} removed from your wishlist.`
+        : `${product.name} added to your wishlist.`,
+    );
   }
 
   function addToCart() {
@@ -1215,9 +1346,29 @@ export default function ProductDetailPage() {
 
             {/* PRODUCT INFORMATION */}
             <div className="lg:pt-1">
-              <span className="inline-flex rounded-full bg-[#d9f0d4] px-4 py-1.5 text-[12px] font-medium text-[#4d7850]">
-                {product.badge}
-              </span>
+              <div className="flex items-start justify-between gap-4">
+                <span className="inline-flex rounded-full bg-[#d9f0d4] px-4 py-1.5 text-[12px] font-medium text-[#4d7850]">
+                  {product.badge}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={toggleWishlist}
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border bg-white shadow-sm transition hover:scale-105 ${
+                    isProductSaved
+                      ? "border-[#d7a69b] text-[#b43b32]"
+                      : "border-[#e2d6c8] text-[#6a4a36] hover:text-[#b43b32]"
+                  }`}
+                  aria-label={
+                    isProductSaved
+                      ? `Remove ${product.name} from wishlist`
+                      : `Add ${product.name} to wishlist`
+                  }
+                  aria-pressed={isProductSaved}
+                >
+                  <HeartIcon filled={isProductSaved} />
+                </button>
+              </div>
 
               <h1 className="mt-4 max-w-[650px] font-[Georgia,serif] text-[42px] font-semibold leading-[1.04] tracking-[-0.03em] md:text-[55px]">
                 {product.name}
@@ -1230,6 +1381,12 @@ export default function ProductDetailPage() {
                   {product.rating} ({product.reviews} reviews)
                 </span>
               </div>
+
+              {wishlistMessage && (
+                <p className="mt-3 text-[13px] font-medium text-[#4d7850]">
+                  {wishlistMessage}
+                </p>
+              )}
 
               <p className="mt-8 max-w-[620px] text-[16px] leading-7 text-[#60554d]">
                 {product.description}
