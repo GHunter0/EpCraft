@@ -11,6 +11,25 @@ npm run dev
 
 Open http://localhost:3000
 
+## Environment Setup
+
+Copy `.env.local.example` to `.env.local`:
+
+```bash
+cp .env.local.example .env.local
+```
+
+### Obtaining Supabase Credentials
+
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard) and select your project.
+2. Go to **Project Settings** (gear icon in sidebar) > **API**.
+3. Under **Project URL**, copy the URL for `NEXT_PUBLIC_SUPABASE_URL`.
+4. Under **Project API Keys**:
+   - Copy the `anon` / `public` key for `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+   - Copy the `service_role` / `secret` key for `SUPABASE_SERVICE_ROLE_KEY` *(keep secret, server-side only)*.
+5. Paste these values into `.env.local`.
+
+
 ## Design system (extracted from Figma)
 
 | Token       | Value      | Use                                  |

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
-import { Search, Heart, ShoppingBag, Menu, X, User, Bot, ChevronDown, Package, LogIn } from "lucide-react";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, Heart, ShoppingBag, Menu, X, User, Bot, ChevronDown, Package, LogIn, ShieldAlert } from "lucide-react";
 import { useShop } from "@/lib/ShopContext";
+import { createClient } from "@/lib/supabase/client";
 
 const links = [
   { href: "/shop", label: "Shop" },
@@ -18,8 +19,71 @@ export default function Navbar({ onOpenChat }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+
   const pathname = usePathname();
+  const router = useRouter();
   const { cartCount, wishlist } = useShop();
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadUser() {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      setUser(currentUser);
+
+      if (currentUser) {
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("name, is_admin")
+          .eq("id", currentUser.id)
+          .single();
+
+        setProfile(userProfile);
+      } else {
+        setProfile(null);
+      }
+    }
+
+    loadUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+
+        if (currentUser) {
+          const { data: userProfile } = await supabase
+            .from("profiles")
+            .select("name, is_admin")
+            .eq("id", currentUser.id)
+            .single();
+
+          setProfile(userProfile);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    setProfileOpen(false);
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+    window.location.href = "/login";
+  };
+
+  const displayName = profile?.name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Guest User";
+  const displayEmail = user?.email || "";
 
   return (
     <>
@@ -113,43 +177,73 @@ export default function Navbar({ onOpenChat }) {
               {profileOpen && (
                 <div
                   onMouseLeave={() => setProfileOpen(false)}
-                  className="absolute right-0 mt-3 w-52 rounded-xl border border-border/60 bg-white p-2 shadow-card animate-in fade-in slide-in-from-top-2 duration-200 z-50"
+                  className="absolute right-0 mt-3 w-56 rounded-xl border border-border/60 bg-white p-2 shadow-card animate-in fade-in slide-in-from-top-2 duration-200 z-50"
                 >
-                  <div className="border-b border-border/40 px-3 py-2">
-                    <p className="font-serif text-sm font-bold text-espresso">Julian Vane</p>
-                    <p className="font-sans text-xs text-bark">julian@epcraft.com</p>
-                  </div>
-                  <div className="py-1">
-                    <Link
-                      href="/account"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
-                    >
-                      <User size={16} className="text-espresso" /> My Profile
-                    </Link>
-                    <Link
-                      href="/orders"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
-                    >
-                      <Package size={16} className="text-espresso" /> Orders & Tracking
-                    </Link>
-                    <Link
-                      href="/wishlist"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
-                    >
-                      <Heart size={16} className="text-espresso" /> Saved Wishlist
-                    </Link>
-                    <hr className="my-1 border-border/40" />
-                    <Link
-                      href="/login"
-                      onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-bark hover:bg-cream"
-                    >
-                      <LogIn size={16} /> Sign Out
-                    </Link>
-                  </div>
+                  {user ? (
+                    <>
+                      <div className="border-b border-border/40 px-3 py-2">
+                        <p className="font-serif text-sm font-bold text-espresso">{displayName}</p>
+                        <p className="font-sans text-xs text-bark truncate">{displayEmail}</p>
+                      </div>
+                      <div className="py-1">
+                        {profile?.is_admin && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setProfileOpen(false)}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm font-semibold text-espresso hover:bg-cream"
+                          >
+                            <ShieldAlert size={16} className="text-gold" /> Admin Dashboard
+                          </Link>
+                        )}
+                        <Link
+                          href="/account"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
+                        >
+                          <User size={16} className="text-espresso" /> My Profile
+                        </Link>
+                        <Link
+                          href="/orders"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
+                        >
+                          <Package size={16} className="text-espresso" /> Orders & Tracking
+                        </Link>
+                        <Link
+                          href="/wishlist"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-ink hover:bg-cream"
+                        >
+                          <Heart size={16} className="text-espresso" /> Saved Wishlist
+                        </Link>
+                        <hr className="my-1 border-border/40" />
+                        <button
+                          onClick={handleSignOut}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-sans text-sm text-red-600 hover:bg-cream"
+                        >
+                          <LogIn size={16} /> Sign Out
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-2 flex flex-col gap-2">
+                      <p className="font-sans text-xs text-bark text-center pb-1">Sign in to your account</p>
+                      <Link
+                        href="/login"
+                        onClick={() => setProfileOpen(false)}
+                        className="btn-dark w-full text-center py-2 text-xs"
+                      >
+                        Log In
+                      </Link>
+                      <Link
+                        href="/register"
+                        onClick={() => setProfileOpen(false)}
+                        className="w-full text-center py-2 text-xs font-sans text-espresso font-semibold hover:underline"
+                      >
+                        Create Account
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -181,43 +275,67 @@ export default function Navbar({ onOpenChat }) {
               ))}
               <hr className="my-2 border-border/60" />
               <div className="flex flex-col gap-3 pt-1">
-                <Link
-                  href="/account"
-                  className="flex items-center gap-2 font-sans text-base text-bark"
-                  onClick={() => setOpen(false)}
-                >
-                  <User size={18} /> My Account & Profile
-                </Link>
-                <Link
-                  href="/orders"
-                  className="flex items-center gap-2 font-sans text-base text-bark"
-                  onClick={() => setOpen(false)}
-                >
-                  <Package size={18} /> Orders & Tracking
-                </Link>
-                <Link
-                  href="/wishlist"
-                  className="flex items-center gap-2 font-sans text-base text-bark"
-                  onClick={() => setOpen(false)}
-                >
-                  <Heart size={18} /> Wishlist ({wishlist.length})
-                </Link>
-                <Link
-                  href="/cart"
-                  className="flex items-center gap-2 font-sans text-base text-bark"
-                  onClick={() => setOpen(false)}
-                >
-                  <ShoppingBag size={18} /> Cart ({cartCount})
-                </Link>
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    if (onOpenChat) onOpenChat();
-                  }}
-                  className="flex items-center gap-2 font-sans text-base text-espresso font-medium pt-2"
-                >
-                  <Bot size={18} className="text-gold" /> EpCraft AI Chatbot
-                </button>
+                {user ? (
+                  <>
+                    <p className="font-serif text-sm font-bold text-espresso px-1">{displayName}</p>
+                    {profile?.is_admin && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2 font-sans text-base font-semibold text-espresso"
+                        onClick={() => setOpen(false)}
+                      >
+                        <ShieldAlert size={18} className="text-gold" /> Admin Dashboard
+                      </Link>
+                    )}
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-2 font-sans text-base text-bark"
+                      onClick={() => setOpen(false)}
+                    >
+                      <User size={18} /> My Account & Profile
+                    </Link>
+                    <Link
+                      href="/orders"
+                      className="flex items-center gap-2 font-sans text-base text-bark"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Package size={18} /> Orders & Tracking
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      className="flex items-center gap-2 font-sans text-base text-bark"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Heart size={18} /> Wishlist ({wishlist.length})
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        handleSignOut();
+                      }}
+                      className="flex items-center gap-2 font-sans text-base text-red-600 font-medium pt-1"
+                    >
+                      <LogIn size={18} /> Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex gap-3 pt-2">
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      className="btn-dark flex-1 text-center py-2.5 text-sm"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setOpen(false)}
+                      className="rounded-pill border border-bark/20 bg-white flex-1 text-center py-2.5 text-sm font-semibold text-ink"
+                    >
+                      Register
+                    </Link>
+                  </div>
+                )}
               </div>
             </nav>
           </div>
@@ -264,5 +382,3 @@ export default function Navbar({ onOpenChat }) {
     </>
   );
 }
-
-
