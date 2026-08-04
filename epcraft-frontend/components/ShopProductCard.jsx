@@ -1,15 +1,17 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Heart, Check } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useState } from "react";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
 
 export default function ShopProductCard({ product }) {
   const { addToCart, toggleWishlist, isInWishlist } = useShop();
   const [added, setAdded] = useState(false);
   const isWished = isInWishlist(product.id);
+  const imageUrl = getProductImageUrl(product.image_url || product.image);
 
   const handleCartClick = (e) => {
     e.preventDefault();
@@ -29,13 +31,24 @@ export default function ShopProductCard({ product }) {
     <div className="group relative overflow-hidden rounded-xl bg-white shadow-[0px_10px_30px_0px_rgba(43,36,32,0.05)] transition-all hover:shadow-card">
       <Link href={`/product/${product.id}`} className="block">
         <div className="relative h-[280px] w-full overflow-hidden md:h-[320px]">
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sand to-border/60 p-4 font-serif text-sm text-bark/60 transition duration-300 group-hover:scale-105">
-            {product.name}
-          </div>
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={product.name}
+              fill
+              sizes="(max-width: 768px) 50vw, 33vw"
+              className="object-cover transition duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sand to-border/60 p-4 font-serif text-sm text-bark/60 transition duration-300 group-hover:scale-105">
+              {product.name}
+            </div>
+          )}
+          
           <button
             onClick={handleWishlistClick}
             aria-label="Add to wishlist"
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-pill bg-white/80 shadow-sm backdrop-blur-sm transition hover:scale-110"
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-pill bg-white/80 shadow-sm backdrop-blur-sm transition hover:scale-110 z-10"
           >
             <Heart
               size={18}
@@ -43,11 +56,11 @@ export default function ShopProductCard({ product }) {
             />
           </button>
           {!product.inStock && (
-            <span className="absolute left-4 top-4 rounded-pill bg-ink/80 px-3 py-1 font-sans text-xs text-white">
+            <span className="absolute left-4 top-4 rounded-pill bg-ink/80 px-3 py-1 font-sans text-xs text-white z-10">
               Out of Stock
             </span>
           )}
-          <div className="absolute inset-x-[10%] bottom-0 translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-[-16px] group-hover:opacity-100">
+          <div className="absolute inset-x-[10%] bottom-0 translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-[-16px] group-hover:opacity-100 z-10">
             <button
               onClick={handleCartClick}
               className={`w-full rounded-pill py-3 font-sans text-sm font-medium text-white shadow-soft transition-colors ${
@@ -67,4 +80,3 @@ export default function ShopProductCard({ product }) {
     </div>
   );
 }
-

@@ -1,18 +1,58 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { Heart, ShoppingBag } from "lucide-react";
 import AccountSidebar from "@/components/AccountSidebar";
-import { products, formatPrice } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
+import { createClient } from "@/lib/supabase/client";
 
 export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useShop();
+  const [savedProducts, setSavedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const savedProducts = products.filter((p) => wishlist.includes(p.id));
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadWishlistProducts() {
+      if (wishlist.length === 0) {
+        setSavedProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .in("id", wishlist);
+
+        if (error) {
+          console.error("Error loading wishlist items:", error);
+        } else {
+          setSavedProducts(
+            (data || []).map((p) => ({
+              ...p,
+              woodType: p.wood_type,
+              inStock: p.in_stock,
+              image: p.image_url,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Unexpected error loading wishlist:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadWishlistProducts();
+  }, [wishlist]);
 
   return (
-    <div className="flex flex-col md:flex-row">
+    <div className="flex flex-col md:flex-row bg-cream min-h-screen">
       <AccountSidebar active="Wishlist" />
 
       <div className="flex flex-1 flex-col gap-10 px-6 py-8 md:px-16 md:py-12">
@@ -36,7 +76,9 @@ export default function WishlistPage() {
           )}
         </div>
 
-        {savedProducts.length === 0 ? (
+        {loading ? (
+          <div className="py-20 text-center font-sans text-bark">Loading wishlist items...</div>
+        ) : savedProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-border/60 bg-white py-20 text-center shadow-soft">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cream text-bark">
               <Heart size={32} />
@@ -93,4 +135,3 @@ export default function WishlistPage() {
     </div>
   );
 }
-

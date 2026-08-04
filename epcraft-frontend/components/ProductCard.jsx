@@ -1,16 +1,33 @@
 "use client";
+
+import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 
 export default function ProductCard({ product }) {
+  const imageUrl = getProductImageUrl(product.image_url || product.image);
+
   return (
     <Link href={`/product/${product.id}`} className="group flex flex-col gap-6">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-sand">
-        {/* Swap for next/image once real product photography is in /public */}
-        <div className="h-full w-full bg-gradient-to-br from-sand to-border/60 transition group-hover:scale-105" />
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-cover transition duration-300 group-hover:scale-105"
+            priority={false}
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-sand to-border/60 transition group-hover:scale-105" />
+        )}
         <button
-          onClick={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           aria-label="Add to wishlist"
           className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-pill bg-white/80 backdrop-blur-md transition hover:bg-white"
         >

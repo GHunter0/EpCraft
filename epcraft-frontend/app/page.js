@@ -1,9 +1,18 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import { products, categories } from "@/lib/products";
+import { getProducts } from "@/lib/data/products";
+import { getCategories } from "@/lib/data/categories";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [products, categories] = await Promise.all([
+    getProducts(),
+    getCategories()
+  ]);
+
+  // Take the first 4 products as featured items
+  const featuredProducts = products.slice(0, 4);
+
   return (
     <div>
       {/* Hero */}
@@ -43,11 +52,13 @@ export default function HomePage() {
         <div className="grid w-full grid-cols-2 gap-8 md:grid-cols-4">
           {categories.map((cat) => (
             <Link
-              key={cat.name}
-              href={`/shop?category=${cat.name}`}
+              key={cat.id}
+              href={`/shop?category=${encodeURIComponent(cat.name)}`}
               className="flex flex-col items-center gap-6"
             >
-              <div className="h-40 w-40 overflow-hidden rounded-pill bg-sand shadow-card md:h-56 md:w-56" />
+              <div className="h-40 w-40 overflow-hidden rounded-pill bg-sand shadow-card md:h-56 md:w-56 flex items-center justify-center font-serif text-lg text-bark">
+                {cat.name.charAt(0)}
+              </div>
               <h3 className="h3 text-center">{cat.name}</h3>
             </Link>
           ))}
@@ -66,11 +77,15 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-16 md:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {featuredProducts.length === 0 ? (
+          <p className="py-12 text-center font-sans text-bark">No featured products found.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-6 gap-y-16 md:grid-cols-4">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
 
         <Link href="/shop" className="text-center font-sans text-gold hover:underline md:hidden">
           View All Products

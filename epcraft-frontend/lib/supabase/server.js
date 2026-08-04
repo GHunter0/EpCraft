@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Creates a Supabase client for Server Components, Server Actions, and Route Handlers using cookies.
@@ -36,26 +37,14 @@ export function createClient() {
  * IMPORTANT: Strictly server-only. Never expose or invoke from client components.
  */
 export function createAdminClient() {
-  const cookieStore = cookies()
-
-  return createServerClient(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co',
     process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key',
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Ignore in Server Components
-          }
-        },
-      },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
     }
   )
 }

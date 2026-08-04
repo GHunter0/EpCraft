@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Sparkles, Check, ArrowRight, RefreshCw, Compass } from "lucide-react";
-import { products } from "@/lib/products";
+import { Sparkles, Check, ArrowRight, RefreshCw } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 const questions = [
   {
@@ -34,6 +34,8 @@ export default function AiStylistPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
 
+  const supabase = createClient();
+
   const handleSelect = (option) => {
     const questionId = questions[currentStep].id;
     const newAnswers = { ...answers, [questionId]: option };
@@ -46,18 +48,31 @@ export default function AiStylistPage() {
     }
   };
 
-  const generateRecommendations = (finalAnswers) => {
+  const generateRecommendations = async (finalAnswers) => {
     setIsGenerating(true);
-    setTimeout(() => {
-      // Pick 2 products matching the vibe
-      const matched = products.slice(0, 2);
+    
+    try {
+      const { data } = await supabase
+        .from("products")
+        .select("*")
+        .limit(2);
+
+      const matched = (data || []).map((p) => ({
+        ...p,
+        woodType: p.wood_type,
+        category: p.category_id,
+      }));
+
       setRecommendations({
         woodMatch: finalAnswers.vibe?.includes("Mid-Century") ? "American Walnut" : "European White Oak",
         paletteAdvice: "Pair dark timber grains with soft linen tones, matte black accents, and warm 2700K lighting.",
         items: matched,
       });
+    } catch (err) {
+      console.error("AI recommendation match error:", err);
+    } finally {
       setIsGenerating(false);
-    }, 1200);
+    }
   };
 
   const resetQuiz = () => {
@@ -67,14 +82,14 @@ export default function AiStylistPage() {
   };
 
   return (
-    <div className="container-page py-16">
+    <div className="container-page py-16 bg-cream min-h-screen">
       <div className="mx-auto max-w-3xl text-center">
         <div className="inline-flex items-center gap-2 rounded-pill bg-gold/10 px-4 py-2 font-sans text-xs font-semibold uppercase tracking-wider text-gold">
           <Sparkles size={16} />
           EpCraft Timber Intelligence
         </div>
         <h1 className="h1 mt-4">AI Stylist & Woodcraft Advisor</h1>
-        <p className="body-text mt-3">
+        <p className="body-text mt-3 text-bark">
           Answer 3 quick questions about your living space to receive personalized wood species, finish, and piece recommendations.
         </p>
       </div>
@@ -184,7 +199,7 @@ export default function AiStylistPage() {
                         {prod.category} • {prod.woodType}
                       </span>
                       <h5 className="font-serif text-xl font-bold text-ink mt-1">{prod.name}</h5>
-                      <p className="font-sans text-lg font-semibold text-espresso mt-2">${prod.price}.00</p>
+                      <p className="font-sans text-lg font-semibold text-espresso mt-2">Rs. {prod.price.toLocaleString("en-LK")}</p>
                     </div>
                     <Link
                       href={`/product/${prod.id}`}

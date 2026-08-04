@@ -1,7 +1,7 @@
 "use client";
 
-const categoryOptions = ["Furniture", "Decor", "Kitchenware", "Custom Gifts"];
-const woodOptions = ["Oak", "Walnut", "Teak", "Mango"];
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+
 const finishSwatches = [
   { name: "Natural Oak", color: "#e5d5c0" },
   { name: "Dark Espresso", color: "#3d2b1f" },
@@ -20,29 +20,40 @@ function FilterSection({ title, children }) {
   );
 }
 
-export default function ShopFilters({
-  selectedCategory,
-  onCategoryChange,
-  selectedWood,
-  onWoodChange,
-  inStockOnly,
-  onInStockChange,
-  selectedFinish,
-  onFinishChange,
-}) {
+export default function ShopFilters({ categories = [], woodTypes = [] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Read current filters from URL
+  const selectedCategory = searchParams.get("category");
+  const selectedWood = searchParams.get("wood");
+  const selectedFinish = searchParams.get("finish");
+  const inStockOnly = searchParams.get("inStock") === "true";
+
+  const updateQuery = (key, value) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   return (
     <aside className="flex w-full flex-col gap-8 md:w-64 md:shrink-0">
       <FilterSection title="Category">
         <div className="flex flex-col gap-3">
-          {categoryOptions.map((cat) => (
-            <label key={cat} className="flex items-center gap-3">
+          {categories.map((cat) => (
+            <label key={cat.id || cat.name} className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={selectedCategory === cat}
-                onChange={() => onCategoryChange(selectedCategory === cat ? null : cat)}
+                checked={selectedCategory === cat.name}
+                onChange={() => updateQuery("category", selectedCategory === cat.name ? null : cat.name)}
                 className="h-5 w-5 rounded border-border/60 text-espresso focus:ring-gold"
               />
-              <span className="font-sans text-base text-bark">{cat}</span>
+              <span className="font-sans text-base text-bark">{cat.name}</span>
             </label>
           ))}
         </div>
@@ -50,12 +61,12 @@ export default function ShopFilters({
 
       <FilterSection title="Wood Type">
         <div className="flex flex-col gap-3">
-          {woodOptions.map((wood) => (
-            <label key={wood} className="flex items-center gap-3">
+          {woodTypes.map((wood) => (
+            <label key={wood} className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={selectedWood === wood}
-                onChange={() => onWoodChange(selectedWood === wood ? null : wood)}
+                onChange={() => updateQuery("wood", selectedWood === wood ? null : wood)}
                 className="h-5 w-5 rounded border-border/60 text-espresso focus:ring-gold"
               />
               <span className="font-sans text-base text-bark">{wood}</span>
@@ -71,7 +82,7 @@ export default function ShopFilters({
               key={swatch.name}
               type="button"
               aria-label={swatch.name}
-              onClick={() => onFinishChange(selectedFinish === swatch.name ? null : swatch.name)}
+              onClick={() => updateQuery("finish", selectedFinish === swatch.name ? null : swatch.name)}
               className="h-8 w-8 rounded-pill transition"
               style={{
                 backgroundColor: swatch.color,
@@ -91,7 +102,7 @@ export default function ShopFilters({
           type="button"
           role="switch"
           aria-checked={inStockOnly}
-          onClick={() => onInStockChange(!inStockOnly)}
+          onClick={() => updateQuery("inStock", inStockOnly ? null : "true")}
           className={`relative h-6 w-11 rounded-pill transition ${
             inStockOnly ? "bg-espresso" : "bg-border"
           }`}

@@ -1,36 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Lock, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
 import { formatPrice } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
+import { createClient } from "@/lib/supabase/client";
 
 const steps = ["Shipping", "Payment", "Review"];
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
-  const { cart, cartSubtotal, clearCart } = useShop();
+  const searchParams = useSearchParams();
+  const { cart, cartSubtotal } = useShop();
+
+  // Pre-fill states from user profile
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zip, setZip] = useState("");
+  const [phone, setPhone] = useState("");
+  
   const [delivery, setDelivery] = useState("standard");
   const [payment, setPayment] = useState("card");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const shipping = delivery === "express" ? 150 : (cart.length > 0 ? 0 : 0);
+  const supabase = createClient();
+  const checkoutError = searchParams.get("error");
+  const cancelledOrderId = searchParams.get("order_id");
+
+  useEffect(() => {
+    async function loadUserProfile() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          setName(profile.name || "");
+          setAddress(profile.address || "");
+          setPhone(profile.phone || "");
+        }
+      }
+    }
+    loadUserProfile();
+
+    if (checkoutError === "cancelled" && cancelledOrderId) {
+      setError(`Payment was cancelled for Order #${cancelledOrderId.slice(0, 8)}. You can edit details and retry.`);
+    }
+  }, [checkoutError, cancelledOrderId]);
+
+  const shipping = delivery === "express" ? 150 : 0;
   const tax = Math.round(cartSubtotal * 0.08 * 100) / 100;
   const total = cartSubtotal + shipping + tax;
 
-  function handlePlaceOrder(e) {
+  async function handlePlaceOrder(e) {
     e.preventDefault();
+    setError("");
+
     if (cart.length === 0) {
-      alert("Your cart is empty!");
+      setError("Your cart is empty!");
       return;
     }
-    clearCart();
-    router.push("/order-confirmation");
+
+    setLoading(true);
+
+    try {
+      // 1. Create order on the server
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shippingAddress: { name, address, city, zip, phone },
+          deliveryMethod: delivery,
+          cartItems: cart.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            customOptions: item.customOptions,
+          })),
+        }),
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok) {
+        setError(resData.error || "Failed to place order.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Redirect user to PayHere sandbox payment page
+      const payhereParams = resData.payhereParams;
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "https://sandbox.payhere.lk/pay/checkout";
+
+      Object.entries(payhereParams).forEach(([key, val]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = typeof val === "object" ? JSON.stringify(val) : val;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      console.error(err);
+      setError("An unexpected error occurred. Please try again.");
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="container-page flex flex-col gap-10 py-12 pb-24">
+    <div className="container-page flex flex-col gap-10 py-12 pb-24 bg-cream min-h-screen">
       <div className="flex items-center justify-between">
         <Link href="/cart" className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-wider text-bark hover:text-espresso">
           <ArrowLeft size={16} /> Return to Cart
@@ -60,17 +149,56 @@ export default function CheckoutPage() {
         ))}
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="flex flex-col gap-8 lg:col-span-8">
           {/* Shipping Address */}
           <section className="flex flex-col gap-6 rounded-2xl bg-white p-8 shadow-card border border-border/40">
             <h2 className="font-serif text-2xl font-bold text-espresso">Shipping Address</h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <Field label="Full Name" placeholder="Julian Vane" className="md:col-span-2" required />
-              <Field label="Address" placeholder="128 Artisan Way, Studio 4" className="md:col-span-2" required />
-              <Field label="City" placeholder="High Point" required />
-              <Field label="Postal / Zip Code" placeholder="27260" required />
-              <Field label="Phone Number" placeholder="+1 (555) 000-0000" className="md:col-span-2" required />
+              <Field
+                label="Full Name"
+                placeholder="Julian Vane"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="md:col-span-2"
+                required
+              />
+              <Field
+                label="Address"
+                placeholder="128 Artisan Way, Studio 4"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="md:col-span-2"
+                required
+              />
+              <Field
+                label="City"
+                placeholder="Colombo"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+              />
+              <Field
+                label="Postal / Zip Code"
+                placeholder="00100"
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+                required
+              />
+              <Field
+                label="Phone Number"
+                placeholder="+94 77 123 4567"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="md:col-span-2"
+                required
+              />
             </div>
           </section>
 
@@ -100,9 +228,7 @@ export default function CheckoutPage() {
             <h2 className="font-serif text-2xl font-bold text-espresso">Payment Method</h2>
             <div className="flex gap-8 border-b border-border/40">
               {[
-                { id: "card", label: "Credit / Debit Card" },
-                { id: "bank", label: "Direct Bank Transfer" },
-                { id: "cod", label: "Cash on Delivery" },
+                { id: "card", label: "Credit / Debit Card (PayHere Sandbox)" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -119,31 +245,15 @@ export default function CheckoutPage() {
               ))}
             </div>
 
-            {payment === "card" && (
-              <div className="flex flex-col gap-6 pt-2">
-                <Field label="Card Number" placeholder="0000 0000 0000 0000" required />
-                <div className="grid grid-cols-2 gap-6">
-                  <Field label="Expiry Date" placeholder="MM / YY" required />
-                  <Field label="CVV" placeholder="123" required />
-                </div>
-              </div>
-            )}
-            {payment === "bank" && (
-              <p className="font-sans text-sm text-bark">
-                Bank transfer instructions and invoice will be sent to your email after placing the order.
-              </p>
-            )}
-            {payment === "cod" && (
-              <p className="font-sans text-sm text-bark">
-                Pay with cash or card upon delivery to your home.
-              </p>
-            )}
+            <p className="font-sans text-sm text-bark">
+              You will be redirected to the secure PayHere Sandbox portal to safely complete your payment.
+            </p>
           </section>
         </div>
 
         {/* Order Summary */}
         <div className="lg:col-span-4">
-          <div className="sticky top-24 flex flex-col gap-6 rounded-2xl border border-border/40 bg-cream/60 p-8 shadow-soft">
+          <div className="sticky top-24 flex flex-col gap-6 rounded-2xl border border-border/40 bg-white p-8 shadow-card">
             <h3 className="font-serif text-2xl font-bold text-espresso">Order Summary</h3>
 
             <div className="flex flex-col gap-4 max-h-80 overflow-y-auto">
@@ -193,18 +303,25 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || loading}
               className={`flex items-center justify-center gap-2 rounded-pill py-4 font-sans text-base font-semibold text-white shadow-soft transition-colors ${
-                cart.length === 0 ? "bg-sand text-bark/50 cursor-not-allowed" : "bg-espresso hover:bg-gold"
+                cart.length === 0 || loading ? "bg-sand text-bark/50 cursor-not-allowed" : "bg-espresso hover:bg-gold"
               }`}
             >
-              <Lock size={16} />
-              Place Order & Pay
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Preparing Checkout...
+                </>
+              ) : (
+                <>
+                  <Lock size={16} /> Place Order & Pay
+                </>
+              )}
             </button>
 
             <p className="flex items-center justify-center gap-2 font-sans text-xs uppercase tracking-wide text-bark opacity-80">
               <ShieldCheck size={16} className="text-espresso" />
-              256-bit SSL Encrypted Guarantee
+              PayHere Sandbox Security Guaranteed
             </p>
           </div>
         </div>
@@ -213,7 +330,7 @@ export default function CheckoutPage() {
   );
 }
 
-function Field({ label, placeholder, className = "", required }) {
+function Field({ label, placeholder, value, onChange, className = "", required }) {
   return (
     <label className={`flex flex-col gap-2 ${className}`}>
       <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
@@ -222,6 +339,8 @@ function Field({ label, placeholder, className = "", required }) {
       <input
         type="text"
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         required={required}
         className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold"
       />
@@ -253,3 +372,14 @@ function DeliveryOption({ selected, onSelect, title, price, detail }) {
   );
 }
 
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[400px] bg-cream flex items-center justify-center font-sans text-bark">
+        Preparing Secure Checkout...
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
