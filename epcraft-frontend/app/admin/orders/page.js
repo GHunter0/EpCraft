@@ -38,7 +38,12 @@ export default async function AdminOrdersPage({ searchParams }) {
   const { data: orders, error } = await query;
 
   if (error) {
-    console.error("Failed to fetch orders:", error);
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700 font-sans text-sm">
+        <h2 className="font-serif text-lg font-bold mb-1">Failed to load orders</h2>
+        <p>{error.message}</p>
+      </div>
+    );
   }
 
   const allOrders = orders || [];

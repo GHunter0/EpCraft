@@ -74,9 +74,20 @@ export async function POST(request) {
       })
     }
 
+    // Fetch store settings for shipping & tax rates
+    const { data: settings, error: settingsErr } = await supabase
+      .from("store_settings")
+      .select("standard_shipping, express_shipping, tax_percentage")
+      .eq("id", 1)
+      .single()
+
+    const standardShipping = settings ? Number(settings.standard_shipping) : 0
+    const expressShipping = settings ? Number(settings.express_shipping) : 150
+    const taxPercentage = settings ? Number(settings.tax_percentage) : 8
+
     // Calculations
-    const shipping = deliveryMethod === "express" ? 150 : 0
-    const tax = Math.round(subtotal * 0.08 * 100) / 100
+    const shipping = deliveryMethod === "express" ? expressShipping : standardShipping
+    const tax = Math.round(subtotal * (taxPercentage / 100) * 100) / 100
     const total = subtotal + shipping + tax
 
     // Create the order row

@@ -27,7 +27,12 @@ export default async function OrdersPage() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching orders:", error);
+    return (
+      <div className="container-page py-12 text-center text-red-700 font-sans">
+        <h2 className="font-serif text-xl font-bold">Failed to load orders</h2>
+        <p className="mt-1 text-sm">{error.message}</p>
+      </div>
+    );
   }
 
   // Split into active (first order) and past orders

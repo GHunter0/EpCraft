@@ -37,51 +37,36 @@ export default async function AdminCustomOrdersPage({ searchParams }) {
     .from("custom_order_requests")
     .select(
       `id, status, finish, dimension, engraving_text, font, quoted_price, quoted_lead_time, created_at,
-       profile:profiles!custom_order_requests_user_id_fkey ( name, email )`
+       base_product_id,
+       profile:profiles!custom_order_requests_user_id_fkey ( name, email ),
+       base_product:products!custom_order_requests_base_product_id_fkey ( name )`
     );
 
   if (filterStatus) {
     query = query.eq("status", filterStatus);
   }
 
-  // Oldest pending_review first; otherwise newest first for reviewed items
-  if (filterStatus === "pending_review" || !filterStatus) {
-    query = query.order("status", { ascending: false }); // pending_review sorts last alphabetically — we correct below
-  }
-  // Custom sort: pending_review oldest first, rest newest first
-  const { data: rows, error } = await supabase
-    .from("custom_order_requests")
-    .select(
-      `id, status, finish, dimension, engraving_text, font, quoted_price, quoted_lead_time, created_at,
-       profile:profiles!custom_order_requests_user_id_fkey ( name, email )`
-    )
-    .then
-    ? null
-    : null; // unused — we redo below
+  // pending_review sorts alphabetically before "quoted" — ascending gives us pending_review first.
+  // Within that group oldest first (ascending created_at).
+  query = query
+    .order("status", { ascending: true })
+    .order("created_at", { ascending: true });
 
-  // Re-query properly (pending_review oldest-first, rest newest-first)
-  const { data: allRows, error: fetchErr } = await (filterStatus
-    ? supabase
-        .from("custom_order_requests")
-        .select(
-          `id, status, finish, dimension, engraving_text, font, quoted_price, quoted_lead_time, created_at,
-           profile:profiles!custom_order_requests_user_id_fkey ( name, email )`
-        )
-        .eq("status", filterStatus)
-        .order("created_at", { ascending: filterStatus === "pending_review" })
-    : supabase
-        .from("custom_order_requests")
-        .select(
-          `id, status, finish, dimension, engraving_text, font, quoted_price, quoted_lead_time, created_at,
-           profile:profiles!custom_order_requests_user_id_fkey ( name, email )`
-        )
-        .order("status", { ascending: true }) // pending_review first
-        .order("created_at", { ascending: true }) // oldest pending first
-  );
+  const { data: allRows, error: fetchErr } = await query;
+
+  if (fetchErr) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700 font-sans text-sm">
+        <h2 className="font-serif text-lg font-bold mb-1">Failed to load custom order requests</h2>
+        <p>{fetchErr.message}</p>
+      </div>
+    );
+  }
 
   const requests = allRows || [];
-
-  const pendingCount = requests.filter((r) => r.status === "pending_review").length;
+  const pendingCount = requests.filter(
+    (r) => r.status === "pending_review"
+  ).length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -153,6 +138,7 @@ export default async function AdminCustomOrdersPage({ searchParams }) {
                     "Customer",
                     "Finish · Dimension",
                     "Engraving",
+                    "Base Product",
                     "Status",
                     "Quoted Price",
                     "Submitted",
@@ -202,11 +188,22 @@ export default async function AdminCustomOrdersPage({ searchParams }) {
                       </td>
                       <td className="px-6 py-4 max-w-[180px]">
                         <p className="font-sans text-sm text-gold italic truncate">
-                          {req.engraving_text
-                            ? `"${req.engraving_text}"`
-                            : (
-                              <span className="text-bark/40 not-italic">None</span>
-                            )}
+                          {req.engraving_text ? (
+                            `"${req.engraving_text}"`
+                          ) : (
+                            <span className="text-bark/40 not-italic">
+                              None
+                            </span>
+                          )}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-sans text-sm text-ink">
+                          {req.base_product?.name || (
+                            <span className="text-bark/40 italic text-xs">
+                              No base product
+                            </span>
+                          )}
                         </p>
                       </td>
                       <td className="px-6 py-4">
@@ -218,9 +215,13 @@ export default async function AdminCustomOrdersPage({ searchParams }) {
                         </span>
                       </td>
                       <td className="px-6 py-4 font-serif text-sm font-bold text-espresso">
-                        {req.quoted_price
-                          ? `LKR ${Number(req.quoted_price).toLocaleString()}`
-                          : <span className="font-sans text-xs text-bark/50 font-normal">—</span>}
+                        {req.quoted_price ? (
+                          `LKR ${Number(req.quoted_price).toLocaleString()}`
+                        ) : (
+                          <span className="font-sans text-xs text-bark/50 font-normal">
+                            —
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 font-sans text-xs text-bark">
                         {new Date(req.created_at).toLocaleDateString("en-US", {

@@ -11,6 +11,15 @@ export async function generateStaticParams() {
   return products.map((p) => ({ id: p.id }));
 }
 
+export async function generateMetadata({ params }) {
+  const product = await getProductById(params.id);
+  if (!product) return {};
+  return {
+    title: `${product.name} — Handcrafted by EpCraft`,
+    description: product.description || `Buy ${product.name} handcrafted by master artisans using premium timber at EpCraft.`,
+  };
+}
+
 export default async function ProductDetailPage({ params }) {
   const product = await getProductById(params.id);
   if (!product) return notFound();

@@ -59,7 +59,7 @@ components/
   Footer.jsx        — ✅ shared across all pages
   ProductCard.jsx   — ✅ shared product card
 lib/
-  products.js       — TEMP mock data (swap for real API later)
+  products.js       — formatting utilities and asset helpers
 ```
 
 ## Build roadmap (matching the Figma screen list)
@@ -67,9 +67,9 @@ lib/
 - [x] Homepage
 - [x] Shop – Furniture (category listing + filters)
 - [x] Product Detail
-- [ ] Search Results
+- [x] Search Results
 - [x] Shopping Cart
-- [x] Checkout
+- [x] Checkout (dynamic calculations via store settings)
 - [x] Order Confirmation
 - [x] Order History & Tracking
 - [x] Customization Studio
@@ -79,12 +79,13 @@ lib/
 - [x] Register
 - [x] Contact Us
 - [x] 404 Page
-- [ ] Admin – Order Processing
-- [ ] Admin – Product Management
-- [ ] Admin – Business Overview
+- [x] Admin – Order Processing
+- [x] Admin – Product Management
+- [x] Admin – Business Overview
 
-## Notes for later (backend/DB hookup)
+## Backend & Database Setup
 
-- All product/category data currently comes from `lib/products.js`. Once the database is ready, replace the exports there with real fetch calls — no page code should need to change if the shape stays the same.
-- Product images are placeholder blocks (`bg-sand`) since real photography isn't in the repo yet — drop real images into `public/images/` and swap the `<div className="bg-sand" />` blocks for `next/image`.
-- Auth (Login/Register), Cart, Wishlist, and Account pages will need real state/session once the backend exists — for now they'll use local component state or localStorage-free mock state so the UI is fully clickable without a database.
+- **Supabase**: Real authentication (Google OAuth + email), PostgreSQL database schemas, triggers, and Row Level Security (RLS) policies are active.
+- **PayHere Sandbox**: Sandbox payment gateways integrated in checkout.
+- **Environment variables**: Configured in `.env.local` including `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (kept server-side only), `DATABASE_URL` (direct Postgres pooled access), `PAYHERE_MERCHANT_ID`, and `PAYHERE_MERCHANT_SECRET`.
+- **Database Migrations**: SQL migration files are located under `/supabase/migrations`. Runs standard Postgres schema tables (`profiles`, `categories`, `makers`, `products`, `orders`, `order_items`, `custom_order_requests`, and `store_settings`). RLS verified securely.

@@ -358,7 +358,7 @@ export default function Navbar({ onOpenChat }) {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (searchQuery.trim()) {
-                  window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
+                  router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
                   setSearchOpen(false);
                 }
               }}

@@ -24,6 +24,45 @@ const faqs = [
 
 export default function ContactPage() {
   const [openFaq, setOpenFaq] = useState(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [orderNo, setOrderNo] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+    setFieldErrors({});
+
+    const errors = {};
+    if (!name.trim()) errors.name = "Name is required.";
+    if (!email.trim()) {
+      errors.email = "Email is required.";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = "Email format is invalid.";
+    }
+    if (!message.trim()) errors.message = "Message is required.";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setSubmitting(true);
+    // Simulate submission
+    setTimeout(() => {
+      setSubmitting(false);
+      setSubmitted(true);
+      setName("");
+      setEmail("");
+      setOrderNo("");
+      setMessage("");
+    }, 1000);
+  };
 
   return (
     <div>
@@ -64,46 +103,75 @@ export default function ContactPage() {
 
       {/* Form + FAQ */}
       <div className="container-page grid grid-cols-1 gap-8 py-12 lg:grid-cols-2">
-        <form className="flex flex-col gap-6 rounded-xl bg-white p-6 shadow-card">
+        <form onSubmit={handleContactSubmit} className="flex flex-col gap-6 rounded-xl bg-white p-6 shadow-card">
           <h2 className="font-serif text-3xl font-semibold text-espresso">Send a Message</h2>
+
+          {submitted && (
+            <div className="rounded-lg bg-green-50 border border-green-200 p-4 font-sans text-sm text-green-800">
+              Thank you for contacting EpCraft! Our workshop concierge team will reach out to you shortly.
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <label className="flex flex-col gap-2">
-              <span className="font-sans text-base text-bark">Name</span>
+              <span className="font-sans text-base text-bark">Name *</span>
               <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Oveen Dilmith"
-                className="rounded-xl border border-border/50 px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50"
+                className={`rounded-xl border px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50 ${
+                  fieldErrors.name ? "border-red-300" : "border-border/50"
+                }`}
               />
+              {fieldErrors.name && (
+                <span className="text-xs text-red-600 font-sans">{fieldErrors.name}</span>
+              )}
             </label>
             <label className="flex flex-col gap-2">
-              <span className="font-sans text-base text-bark">Email Address</span>
+              <span className="font-sans text-base text-bark">Email Address *</span>
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="oveendilmith@gmail.com"
-                className="rounded-xl border border-border/50 px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50"
+                className={`rounded-xl border px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50 ${
+                  fieldErrors.email ? "border-red-300" : "border-border/50"
+                }`}
               />
+              {fieldErrors.email && (
+                <span className="text-xs text-red-600 font-sans">{fieldErrors.email}</span>
+              )}
             </label>
           </div>
 
           <label className="flex flex-col gap-2">
             <span className="font-sans text-base text-bark">Order Number (Optional)</span>
             <input
+              value={orderNo}
+              onChange={(e) => setOrderNo(e.target.value)}
               placeholder="#EPC-0000"
               className="rounded-xl border border-border/50 px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50"
             />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="font-sans text-base text-bark">Your Message</span>
+            <span className="font-sans text-base text-bark">Your Message *</span>
             <textarea
               rows={5}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               placeholder="How can we assist you?"
-              className="rounded-xl border border-border/50 px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50"
+              className={`rounded-xl border px-4 py-3.5 font-sans text-base text-ink placeholder:text-bark/50 ${
+                fieldErrors.message ? "border-red-300" : "border-border/50"
+              }`}
             />
+            {fieldErrors.message && (
+              <span className="text-xs text-red-600 font-sans">{fieldErrors.message}</span>
+            )}
           </label>
 
-          <button type="submit" className="btn-dark rounded-pill py-4">
-            Send Inquiry
+          <button type="submit" disabled={submitting} className="btn-dark rounded-pill py-4">
+            {submitting ? "Sending..." : "Send Inquiry"}
           </button>
         </form>
 

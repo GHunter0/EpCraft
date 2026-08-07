@@ -31,6 +31,12 @@ function CheckoutContent() {
   const checkoutError = searchParams.get("error");
   const cancelledOrderId = searchParams.get("order_id");
 
+  const [settings, setSettings] = useState({
+    standard_shipping: 0,
+    express_shipping: 150,
+    tax_percentage: 8,
+  });
+
   useEffect(() => {
     async function loadUserProfile() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -48,15 +54,30 @@ function CheckoutContent() {
         }
       }
     }
+    async function loadStoreSettings() {
+      const { data } = await supabase
+        .from("store_settings")
+        .select("standard_shipping, express_shipping, tax_percentage")
+        .eq("id", 1)
+        .single();
+      if (data) {
+        setSettings({
+          standard_shipping: Number(data.standard_shipping),
+          express_shipping: Number(data.express_shipping),
+          tax_percentage: Number(data.tax_percentage),
+        });
+      }
+    }
     loadUserProfile();
+    loadStoreSettings();
 
     if (checkoutError === "cancelled" && cancelledOrderId) {
       setError(`Payment was cancelled for Order #${cancelledOrderId.slice(0, 8)}. You can edit details and retry.`);
     }
   }, [checkoutError, cancelledOrderId]);
 
-  const shipping = delivery === "express" ? 150 : 0;
-  const tax = Math.round(cartSubtotal * 0.08 * 100) / 100;
+  const shipping = delivery === "express" ? settings.express_shipping : settings.standard_shipping;
+  const tax = Math.round(cartSubtotal * (settings.tax_percentage / 100) * 100) / 100;
   const total = cartSubtotal + shipping + tax;
 
   async function handlePlaceOrder(e) {
@@ -291,7 +312,7 @@ function CheckoutContent() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Estimated Tax (8%)</span>
+                <span>Estimated Tax ({settings.tax_percentage}%)</span>
                 <span className="font-medium text-ink">{formatPrice(tax)}</span>
               </div>
             </div>
