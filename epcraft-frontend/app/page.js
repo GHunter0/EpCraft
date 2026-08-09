@@ -3,6 +3,7 @@ import { Star } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { getProducts } from "@/lib/data/products";
 import { getCategories } from "@/lib/data/categories";
+import { getProductImageUrl } from "@/lib/products";
 
 export const revalidate = 0;
 
@@ -52,18 +53,29 @@ export default async function HomePage() {
         </div>
 
         <div className="grid w-full grid-cols-2 gap-8 md:grid-cols-4">
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/shop?category=${encodeURIComponent(cat.name)}`}
-              className="flex flex-col items-center gap-6"
-            >
-              <div className="h-40 w-40 overflow-hidden rounded-pill bg-sand shadow-card md:h-56 md:w-56 flex items-center justify-center font-serif text-lg text-bark">
-                {cat.name.charAt(0)}
-              </div>
-              <h3 className="h3 text-center">{cat.name}</h3>
-            </Link>
-          ))}
+          {categories.map((cat) => {
+            const imgUrl = getProductImageUrl(cat.image || cat.image_url);
+            return (
+              <Link
+                key={cat.id}
+                href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                className="flex flex-col items-center gap-6"
+              >
+                <div className="h-40 w-40 overflow-hidden rounded-pill bg-sand shadow-card md:h-56 md:w-56 flex items-center justify-center font-serif text-lg text-bark relative">
+                  {imgUrl ? (
+                    <img
+                      src={imgUrl}
+                      alt={cat.name}
+                      className="h-full w-full object-cover transition duration-300 hover:scale-105"
+                    />
+                  ) : (
+                    cat.name.charAt(0)
+                  )}
+                </div>
+                <h3 className="h3 text-center">{cat.name}</h3>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
