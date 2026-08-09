@@ -7,6 +7,8 @@ import { formatPrice, getProductImageUrl } from "@/lib/products";
 
 export default function ProductCard({ product }) {
   const imageUrl = getProductImageUrl(product.image_url || product.image);
+  
+  const isOutOfStock = (product.stock !== undefined && Number(product.stock) <= 0 && !product.allowBackorder) || (product.inStock === false) || (product.in_stock === false);
 
   return (
     <Link href={`/product/${product.id}`} className="group flex flex-col gap-6">
@@ -23,13 +25,20 @@ export default function ProductCard({ product }) {
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-sand to-border/60 transition group-hover:scale-105" />
         )}
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/40 z-10 flex items-center justify-center">
+            <span className="font-sans text-xs font-semibold uppercase tracking-widest text-white bg-red-600/90 px-4 py-1.5 rounded-pill">
+              Out of Stock
+            </span>
+          </div>
+        )}
         <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
           }}
           aria-label="Add to wishlist"
-          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-pill bg-white/80 backdrop-blur-md transition hover:bg-white"
+          className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-pill bg-white/80 backdrop-blur-md transition hover:bg-white"
         >
           <Heart size={18} className="text-espresso" />
         </button>

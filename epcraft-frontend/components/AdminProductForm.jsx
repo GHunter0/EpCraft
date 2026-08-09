@@ -47,6 +47,8 @@ export default function AdminProductForm({
   );
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || "");
   const [inStock, setInStock] = useState(initialData?.in_stock ?? true);
+  const [stock, setStock] = useState(initialData?.stock?.toString() || "10");
+  const [allowBackorder, setAllowBackorder] = useState(initialData?.allow_backorder ?? false);
 
   // Image upload state
   const [uploading, setUploading] = useState(false);
@@ -144,6 +146,8 @@ export default function AdminProductForm({
     fd.set("description", description);
     fd.set("image_url", imageUrl);
     fd.set("in_stock", String(inStock));
+    fd.set("stock", stock);
+    fd.set("allow_backorder", String(allowBackorder));
 
     try {
       const result = await onSubmit(fd);
@@ -466,6 +470,46 @@ export default function AdminProductForm({
             />
           </label>
 
+          {/* Stock and Allow Backorder Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <label className="flex flex-col gap-2">
+              <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
+                Stock Quantity *
+              </span>
+              <input
+                type="number"
+                min="0"
+                value={stock}
+                onChange={(e) => {
+                  setStock(e.target.value);
+                  const isAvailable = parseInt(e.target.value) > 0;
+                  setInStock(isAvailable);
+                }}
+                className={`rounded-xl border bg-white px-4 py-3.5 font-sans text-sm text-ink focus:outline-none focus:ring-2 focus:ring-gold ${
+                  validationErrors.stock ? "border-red-300 ring-1 ring-red-200" : "border-border/60"
+                }`}
+              />
+              {fieldError("stock")}
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer mt-8">
+              <input
+                type="checkbox"
+                checked={allowBackorder}
+                onChange={(e) => setAllowBackorder(e.target.checked)}
+                className="h-5 w-5 rounded border-border/60 text-gold focus:ring-gold accent-gold"
+              />
+              <div className="flex flex-col">
+                <span className="font-sans text-sm text-espresso font-semibold">
+                  Allow Backorders / Pre-orders
+                </span>
+                <span className="font-sans text-[10px] text-bark">
+                  Customers can buy even if out of stock
+                </span>
+              </div>
+            </label>
+          </div>
+
           {/* In Stock toggle */}
           <label className="flex items-center gap-3 cursor-pointer w-fit">
             <input
@@ -478,7 +522,7 @@ export default function AdminProductForm({
               In Stock
             </span>
             <span className="font-sans text-[11px] text-bark">
-              (uncheck to mark as out of stock)
+              (uncheck to mark as out of stock manually)
             </span>
           </label>
 

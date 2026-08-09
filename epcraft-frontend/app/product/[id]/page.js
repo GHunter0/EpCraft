@@ -6,6 +6,8 @@ import ProductTabs from "@/components/ProductTabs";
 import ProductCard from "@/components/ProductCard";
 import { getProductById, getProducts } from "@/lib/data/products";
 
+export const revalidate = 0;
+
 export async function generateStaticParams() {
   const products = await getProducts();
   return products.map((p) => ({ id: p.id }));

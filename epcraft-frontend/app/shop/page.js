@@ -4,6 +4,8 @@ import ShopResultsList from "@/components/ShopResultsList";
 import { getProducts } from "@/lib/data/products";
 import { getCategories } from "@/lib/data/categories";
 
+export const revalidate = 0;
+
 export const metadata = {
   title: "Shop Handcrafted Wood Pieces — EpCraft Workshop Catalog",
   description: "Browse our collection of masterfully carved walnut dining tables, oak serving boards, cedar art pieces, and custom creations.",

@@ -46,8 +46,27 @@ export async function POST(request) {
     // If validated and payment status is successful ('2' = Success/Paid)
     if (status_code === "2") {
       const supabaseAdmin = createAdminClient()
+
+      // 1. Perform atomic stock decrement
+      const { error: rpcErr } = await supabaseAdmin.rpc("decrement_order_stock", {
+        p_order_id: order_id
+      })
+
+      if (rpcErr) {
+        console.error(`Stock decrement failed for order ${order_id}:`, rpcErr)
+        // Mark payment as paid but flag the order status as stock_error for manual action
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            payment_status: "paid",
+            status: "stock_error",
+            payhere_order_id: payment_id
+          })
+          .eq("id", order_id)
+        return NextResponse.json({ error: rpcErr.message || "Stock reservation failed" }, { status: 400 })
+      }
       
-      // Update order status using service role to bypass RLS
+      // 2. Update order status using service role to bypass RLS
       const { error } = await supabaseAdmin
         .from("orders")
         .update({
@@ -62,7 +81,7 @@ export async function POST(request) {
         return NextResponse.json({ error: "Failed to update order" }, { status: 500 })
       }
 
-      console.log(`Order ${order_id} successfully paid via PayHere reference ${payment_id}`)
+      console.log(`Order ${order_id} successfully paid and stock decremented. PayHere ref: ${payment_id}`)
     } else {
       console.log(`Payment status code ${status_code} received for Order ${order_id}`)
     }

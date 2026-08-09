@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, cartSubtotal } = useShop();
+  const { cart, removeFromCart, updateQuantity, cartSubtotal, stockLevels } = useShop();
   const [promo, setPromo] = useState("");
   const [discount, setDiscount] = useState(0);
 
@@ -82,6 +82,18 @@ export default function CartPage() {
                             <span>Wood: {item.woodType || "Solid Timber"} • Category: {item.category || "Furniture"}</span>
                           )}
                         </p>
+                        {(() => {
+                          const stockInfo = stockLevels[item.id];
+                          const isOutOfStock = stockInfo && !stockInfo.allowBackorder && stockInfo.stock < item.quantity;
+                          if (isOutOfStock) {
+                            return (
+                              <p className="font-sans text-xs font-semibold text-red-600 mt-2 bg-red-50 border border-red-200 rounded-lg p-2 max-w-md">
+                                Insufficient stock: only {stockInfo.stock} unit(s) available. Please reduce quantity or remove item.
+                              </p>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       <button
                         onClick={() => removeFromCart(item.cartItemId)}
@@ -181,17 +193,35 @@ export default function CartPage() {
             </div>
 
             {cart.length > 0 ? (
-              <Link
-                href="/checkout"
-                className="flex items-center justify-center gap-2 rounded-pill bg-espresso py-4 font-sans text-base font-semibold text-white shadow-soft transition hover:bg-gold"
-              >
-                Proceed to Checkout
-                <ArrowRight size={18} />
-              </Link>
+              (() => {
+                const hasStockErrors = cart.some((item) => {
+                  const stockInfo = stockLevels[item.id];
+                  return stockInfo && !stockInfo.allowBackorder && stockInfo.stock < item.quantity;
+                });
+                if (hasStockErrors) {
+                  return (
+                    <button
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 rounded-pill bg-sand/80 border border-border/40 py-4 font-sans text-base font-semibold text-red-700/80 cursor-not-allowed"
+                    >
+                      Resolve Stock Errors to Checkout
+                    </button>
+                  );
+                }
+                return (
+                  <Link
+                    href="/checkout"
+                    className="flex items-center justify-center gap-2 rounded-pill bg-espresso py-4 font-sans text-base font-semibold text-white shadow-soft transition hover:bg-gold"
+                  >
+                    Proceed to Checkout
+                    <ArrowRight size={18} />
+                  </Link>
+                );
+              })()
             ) : (
               <button
                 disabled
-                className="cursor-not-allowed rounded-pill bg-sand py-4 font-sans text-base font-semibold text-bark/60"
+                className="w-full cursor-not-allowed rounded-pill bg-sand py-4 font-sans text-base font-semibold text-bark/60"
               >
                 Cart is Empty
               </button>

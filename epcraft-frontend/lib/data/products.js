@@ -61,7 +61,9 @@ export async function getProducts({ category, wood, inStockOnly, sort, searchQue
     category: p.category?.name || 'Woodcraft',
     woodType: p.wood_type,
     inStock: p.in_stock,
-    image: p.image_url
+    image: p.image_url,
+    stock: p.stock,
+    allowBackorder: p.allow_backorder
   }))
 }
 
@@ -93,6 +95,8 @@ export async function getProductById(id) {
     category: data.category?.name || 'Woodcraft',
     woodType: data.wood_type,
     inStock: data.in_stock,
-    image: data.image_url
+    image: data.image_url,
+    stock: data.stock,
+    allowBackorder: data.allow_backorder
   }
 }

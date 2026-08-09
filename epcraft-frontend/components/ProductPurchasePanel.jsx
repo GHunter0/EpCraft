@@ -20,7 +20,10 @@ export default function ProductPurchasePanel({ product }) {
 
   const { addToCart } = useShop();
 
+  const isOutOfStock = (product.stock !== undefined && Number(product.stock) <= 0 && !product.allowBackorder) || (product.inStock === false) || (product.in_stock === false);
+
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
     addToCart(product, qty, {
       finish,
       dimension: size,
@@ -32,9 +35,24 @@ export default function ProductPurchasePanel({ product }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <span className="w-fit rounded-pill bg-[#c2e9c6] px-3 py-1 font-sans text-xs font-semibold text-[#486a4e]">
-          {product.material || product.woodType || "Solid Timber"}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="w-fit rounded-pill bg-[#c2e9c6] px-3 py-1 font-sans text-xs font-semibold text-[#486a4e]">
+            {product.material || product.woodType || "Solid Timber"}
+          </span>
+          {isOutOfStock ? (
+            <span className="w-fit rounded-pill bg-red-100 px-3 py-1 font-sans text-xs font-semibold text-red-700">
+              Out of Stock
+            </span>
+          ) : product.stock !== undefined && Number(product.stock) <= 5 && !product.allowBackorder ? (
+            <span className="w-fit rounded-pill bg-amber-100 px-3 py-1 font-sans text-xs font-semibold text-amber-700 font-medium">
+              Only {product.stock} units left
+            </span>
+          ) : (
+            <span className="w-fit rounded-pill bg-green-100 px-3 py-1 font-sans text-xs font-semibold text-green-700">
+              In Stock
+            </span>
+          )}
+        </div>
         <h1 className="font-serif text-4xl font-bold tracking-tight text-espresso md:text-5xl">
           {product.name}
         </h1>
@@ -88,22 +106,31 @@ export default function ProductPurchasePanel({ product }) {
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-6 rounded-pill border border-border/60 bg-white px-5 py-3 shadow-xs">
-            <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Decrease quantity">
-              <Minus size={16} className="text-ink" />
-            </button>
-            <span className="font-sans text-sm font-semibold">{qty}</span>
-            <button onClick={() => setQty((q) => q + 1)} aria-label="Increase quantity">
-              <Plus size={16} className="text-ink" />
-            </button>
-          </div>
+          {!isOutOfStock && (
+            <div className="flex items-center gap-6 rounded-pill border border-border/60 bg-white px-5 py-3 shadow-xs">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Decrease quantity">
+                <Minus size={16} className="text-ink" />
+              </button>
+              <span className="font-sans text-sm font-semibold">{qty}</span>
+              <button onClick={() => setQty((q) => q + 1)} aria-label="Increase quantity">
+                <Plus size={16} className="text-ink" />
+              </button>
+            </div>
+          )}
           <button
             onClick={handleAddToCart}
+            disabled={isOutOfStock}
             className={`flex-1 rounded-pill py-4 font-sans text-base font-semibold tracking-wide text-white shadow-soft transition-colors ${
-              added ? "bg-green-700" : "bg-espresso hover:bg-gold"
+              isOutOfStock
+                ? "bg-sand/80 text-bark/40 cursor-not-allowed border border-border/40"
+                : added
+                ? "bg-green-700"
+                : "bg-espresso hover:bg-gold"
             }`}
           >
-            {added ? (
+            {isOutOfStock ? (
+              "Out of Stock"
+            ) : added ? (
               <span className="flex items-center justify-center gap-2">
                 <Check size={18} /> Added to Cart!
               </span>

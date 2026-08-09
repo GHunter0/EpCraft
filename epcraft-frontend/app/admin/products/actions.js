@@ -83,6 +83,11 @@ function validateProductFields(fields) {
     errors.category_id = "Category is required.";
   }
 
+  const stock = parseInt(fields.stock);
+  if (isNaN(stock) || stock < 0) {
+    errors.stock = "A valid stock quantity (≥ 0) is required.";
+  }
+
   // Optional fields — no validation needed for maker_id, material, wood_type, description, image_url
 
   return {
@@ -109,6 +114,8 @@ export async function createProduct(formData) {
     description: formData.get("description") || null,
     image_url: formData.get("image_url") || null,
     in_stock: formData.get("in_stock") === "true",
+    stock: formData.get("stock"),
+    allow_backorder: formData.get("allow_backorder") === "true",
   };
 
   const { valid, errors } = validateProductFields(fields);
@@ -138,6 +145,8 @@ export async function createProduct(formData) {
     description: fields.description?.trim() || null,
     image_url: fields.image_url?.trim() || null,
     in_stock: fields.in_stock,
+    stock: parseInt(fields.stock),
+    allow_backorder: fields.allow_backorder,
   });
 
   if (insertErr) {
@@ -169,6 +178,8 @@ export async function updateProduct(productId, formData) {
     description: formData.get("description") || null,
     image_url: formData.get("image_url") || null,
     in_stock: formData.get("in_stock") === "true",
+    stock: formData.get("stock"),
+    allow_backorder: formData.get("allow_backorder") === "true",
   };
 
   const { valid, errors } = validateProductFields(fields);
@@ -188,6 +199,8 @@ export async function updateProduct(productId, formData) {
       description: fields.description?.trim() || null,
       image_url: fields.image_url?.trim() || null,
       in_stock: fields.in_stock,
+      stock: parseInt(fields.stock),
+      allow_backorder: fields.allow_backorder,
     })
     .eq("id", productId);
 

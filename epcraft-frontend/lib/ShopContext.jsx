@@ -11,8 +11,34 @@ export function ShopProvider({ children }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null); // { message, type }
+  const [stockLevels, setStockLevels] = useState({}); // { [productId]: { stock, allowBackorder } }
 
   const supabase = createClient();
+
+  // Fetch real-time stock levels for all products in the cart
+  const refreshStockLevels = async (items = cart) => {
+    if (!items || items.length === 0) return;
+    const productIds = items.map((item) => item.id);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, stock, allow_backorder")
+        .in("id", productIds);
+      if (!error && data) {
+        const levels = {};
+        data.forEach((p) => {
+          levels[p.id] = { stock: p.stock, allowBackorder: p.allow_backorder };
+        });
+        setStockLevels((prev) => ({ ...prev, ...levels }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch stock levels:", err);
+    }
+  };
+
+  useEffect(() => {
+    refreshStockLevels();
+  }, [cart.map(item => item.id).join(",")]);
   
   // Keep refs for rolling back state in case of server failures
   const previousCartRef = useRef([]);
@@ -292,7 +318,7 @@ export function ShopProvider({ children }) {
       } catch (err) {
         console.error("addToCart DB save failed:", err);
         setCart(previousCartRef.current); // Rollback
-        showToast("Failed to add item to your online cart. Restored local state.");
+        showToast(err.message || "Failed to add item to your online cart. Restored local state.");
       }
     }
   };
@@ -341,7 +367,7 @@ export function ShopProvider({ children }) {
       } catch (err) {
         console.error("updateQuantity DB failed:", err);
         setCart(previousCartRef.current); // Rollback
-        showToast("Failed to update quantity. Restored local state.");
+        showToast(err.message || "Failed to update quantity. Restored local state.");
       }
     }
   };
@@ -418,6 +444,8 @@ export function ShopProvider({ children }) {
         isInWishlist,
         cartCount,
         cartSubtotal,
+        stockLevels,
+        refreshStockLevels,
       }}
     >
       {children}

@@ -47,7 +47,7 @@ export async function POST(request) {
     const productIds = cartItems.map((item) => item.id)
     const { data: dbProducts, error: dbErr } = await supabase
       .from("products")
-      .select("id, name, price")
+      .select("id, name, price, stock, allow_backorder")
       .in("id", productIds)
 
     if (dbErr || !dbProducts) {
@@ -61,6 +61,13 @@ export async function POST(request) {
       const dbProduct = dbProducts.find((p) => p.id === cartItem.id)
       if (!dbProduct) {
         return NextResponse.json({ error: `Product not found: ${cartItem.id}` }, { status: 400 })
+      }
+
+      // Check stock availability
+      if (!dbProduct.allow_backorder && Number(dbProduct.stock) < cartItem.quantity) {
+        return NextResponse.json({ 
+          error: `Insufficient stock for product "${dbProduct.name}". Only ${dbProduct.stock} unit(s) left.` 
+        }, { status: 400 })
       }
       
       const itemPrice = Number(dbProduct.price)

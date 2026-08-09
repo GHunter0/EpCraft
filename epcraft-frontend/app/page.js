@@ -4,6 +4,8 @@ import ProductCard from "@/components/ProductCard";
 import { getProducts } from "@/lib/data/products";
 import { getCategories } from "@/lib/data/categories";
 
+export const revalidate = 0;
+
 export default async function HomePage() {
   const [products, categories] = await Promise.all([
     getProducts(),
