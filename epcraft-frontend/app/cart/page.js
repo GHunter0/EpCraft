@@ -11,17 +11,43 @@ export default function CartPage() {
   const [promo, setPromo] = useState("");
   const [discount, setDiscount] = useState(0);
 
-  const shipping = cart.length > 0 ? 120 : 0;
-  const subtotalAfterDiscount = Math.max(0, cartSubtotal - discount);
+  // Selection states
+  const [selectedItems, setSelectedItems] = useState(() => {
+    return cart.map((item) => item.cartItemId);
+  });
+
+  // Keep selectedItems in sync if cart changes (e.g. items deleted)
+  const activeSelectedItems = cart.filter(item => selectedItems.includes(item.cartItemId));
+
+  const selectedSubtotal = activeSelectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const shipping = activeSelectedItems.length > 0 ? 120 : 0;
+  const subtotalAfterDiscount = Math.max(0, selectedSubtotal - discount);
   const tax = Math.round(subtotalAfterDiscount * 0.08 * 100) / 100;
   const total = subtotalAfterDiscount + shipping + tax;
+
+  const toggleSelectItem = (cartItemId) => {
+    setSelectedItems((prev) =>
+      prev.includes(cartItemId)
+        ? prev.filter((id) => id !== cartItemId)
+        : [...prev, cartItemId]
+    );
+  };
+
+  const isAllSelected = cart.length > 0 && activeSelectedItems.length === cart.length;
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cart.map((item) => item.cartItemId));
+    }
+  };
 
   const handleApplyPromo = (e) => {
     e.preventDefault();
     if (promo.trim().toUpperCase() === "EPCRAFT10") {
-      setDiscount(Math.round(cartSubtotal * 0.1));
+      setDiscount(Math.round(selectedSubtotal * 0.1));
     } else if (promo.trim().toUpperCase() === "WOOD20") {
-      setDiscount(Math.round(cartSubtotal * 0.2));
+      setDiscount(Math.round(selectedSubtotal * 0.2));
     } else {
       alert("Invalid code. Try 'EPCRAFT10' or 'WOOD20'");
     }
@@ -56,88 +82,113 @@ export default function CartPage() {
                 </div>
               </div>
             ) : (
-              cart.map((item) => (
-                <div
-                  key={item.cartItemId}
-                  className="flex gap-6 border-b border-border/40 pb-8"
-                >
-                  <div className="h-32 w-32 shrink-0 rounded-xl bg-sand flex items-center justify-center font-serif text-xs text-bark/60 overflow-hidden relative border border-border/30">
-                    {item.image ? (
-                      <img
-                        src={getProductImageUrl(item.image)}
-                        alt={item.name}
-                        className="h-full w-full object-cover rounded-xl"
-                      />
-                    ) : (
-                      item.name
-                    )}
-                  </div>
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="font-serif text-2xl text-espresso font-semibold">{item.name}</h2>
-                        <p className="mt-1 font-sans text-sm text-bark">
-                          {item.customOptions ? (
-                            <span>
-                              Custom Finish: <strong>{item.customOptions.finish}</strong> • Dimension: <strong>{item.customOptions.dimension}</strong>
-                              {item.customOptions.engraving && (
-                                <span className="block italic text-gold mt-0.5">
-                                  Engraving: &ldquo;{item.customOptions.engraving}&rdquo;
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span>Wood: {item.woodType || "Solid Timber"} • Category: {item.category || "Furniture"}</span>
-                          )}
-                        </p>
-                        {(() => {
-                          const stockInfo = stockLevels[item.id];
-                          const isOutOfStock = stockInfo && !stockInfo.allowBackorder && stockInfo.stock < item.quantity;
-                          if (isOutOfStock) {
-                            return (
-                              <p className="font-sans text-xs font-semibold text-red-600 mt-2 bg-red-50 border border-red-200 rounded-lg p-2 max-w-md">
-                                Insufficient stock: only {stockInfo.stock} unit(s) available. Please reduce quantity or remove item.
-                              </p>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.cartItemId)}
-                        aria-label="Remove item"
-                        className="text-bark hover:text-red-700 transition-colors"
-                      >
-                        <Trash2 size={20} />
-                      </button>
-                    </div>
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="flex items-center gap-4 rounded-pill border border-border/60 bg-white px-3 py-1.5 shadow-xs">
-                        <button
-                          onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                          aria-label="Decrease quantity"
-                          className="p-1 hover:text-espresso"
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="w-6 text-center font-sans text-sm font-semibold text-ink">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                          aria-label="Increase quantity"
-                          className="p-1 hover:text-espresso"
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                      <p className="font-serif text-2xl font-bold text-espresso">
-                        {formatPrice(item.price * item.quantity)}
-                      </p>
-                    </div>
-                  </div>
+              <div className="flex flex-col gap-8">
+                {/* Select All Checkbox */}
+                <div className="flex items-center gap-3 border-b border-border/20 pb-4">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                    className="h-5 w-5 rounded border-gray-300 text-espresso focus:ring-espresso cursor-pointer accent-espresso"
+                    id="select-all-cart"
+                  />
+                  <label htmlFor="select-all-cart" className="font-sans text-sm font-semibold text-espresso cursor-pointer select-none">
+                    Select All Items ({activeSelectedItems.length}/{cart.length} selected)
+                  </label>
                 </div>
-              ))
+                {cart.map((item) => {
+                  const isSelected = selectedItems.includes(item.cartItemId);
+                  return (
+                    <div
+                      key={item.cartItemId}
+                      className={`flex gap-6 border-b border-border/40 pb-8 items-center ${!isSelected ? 'opacity-70' : ''}`}
+                    >
+                      {/* Selection Checkbox */}
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectItem(item.cartItemId)}
+                        className="h-5 w-5 rounded border-gray-300 text-espresso focus:ring-espresso cursor-pointer accent-espresso shrink-0 mr-2"
+                      />
+                      <div className="h-32 w-32 shrink-0 rounded-xl bg-sand flex items-center justify-center font-serif text-xs text-bark/60 overflow-hidden relative border border-border/30">
+                        {item.image ? (
+                          <img
+                            src={getProductImageUrl(item.image)}
+                            alt={item.name}
+                            className="h-full w-full object-cover rounded-xl"
+                          />
+                        ) : (
+                          item.name
+                        )}
+                      </div>
+                      <div className="flex flex-1 flex-col justify-between">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h2 className="font-serif text-2xl text-espresso font-semibold">{item.name}</h2>
+                            <p className="mt-1 font-sans text-sm text-bark">
+                              {item.customOptions ? (
+                                <span>
+                                  Custom Finish: <strong>{item.customOptions.finish}</strong> • Dimension: <strong>{item.customOptions.dimension}</strong>
+                                  {item.customOptions.engraving && (
+                                    <span className="block italic text-gold mt-0.5">
+                                      Engraving: &ldquo;{item.customOptions.engraving}&rdquo;
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span>Wood: {item.woodType || "Solid Timber"} • Category: {item.category || "Furniture"}</span>
+                              )}
+                            </p>
+                            {(() => {
+                              const stockInfo = stockLevels[item.id];
+                              const isOutOfStock = stockInfo && !stockInfo.allowBackorder && stockInfo.stock < item.quantity;
+                              if (isOutOfStock) {
+                                  return (
+                                    <p className="font-sans text-xs font-semibold text-red-600 mt-2 bg-red-50 border border-red-200 rounded-lg p-2 max-w-md">
+                                      Insufficient stock: only {stockInfo.stock} unit(s) available. Please reduce quantity or remove item.
+                                    </p>
+                                  );
+                                }
+                                return null;
+                            })()}
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.cartItemId)}
+                            aria-label="Remove item"
+                            className="text-bark hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                        <div className="flex items-end justify-between mt-4">
+                          <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-cream/30 px-3 py-1.5">
+                            <button
+                              onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
+                              aria-label="Decrease quantity"
+                              className="p-1 hover:text-espresso"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="font-sans text-sm font-semibold text-ink w-6 text-center select-none">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
+                              aria-label="Increase quantity"
+                              className="p-1 hover:text-espresso"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                          <p className="font-serif text-2xl font-bold text-espresso">
+                            {formatPrice(item.price * item.quantity)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
@@ -152,7 +203,7 @@ export default function CartPage() {
             <div className="flex flex-col gap-3 font-sans text-base">
               <div className="flex justify-between text-bark">
                 <span>Subtotal</span>
-                <span className="font-medium text-ink">{formatPrice(cartSubtotal)}</span>
+                <span className="font-medium text-ink">{formatPrice(selectedSubtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-gold font-medium">
@@ -202,7 +253,7 @@ export default function CartPage() {
 
             {cart.length > 0 ? (
               (() => {
-                const hasStockErrors = cart.some((item) => {
+                const hasStockErrors = activeSelectedItems.some((item) => {
                   const stockInfo = stockLevels[item.id];
                   return stockInfo && !stockInfo.allowBackorder && stockInfo.stock < item.quantity;
                 });
@@ -216,9 +267,20 @@ export default function CartPage() {
                     </button>
                   );
                 }
+                const isAnySelected = activeSelectedItems.length > 0;
+                if (!isAnySelected) {
+                  return (
+                    <button
+                      disabled
+                      className="w-full flex items-center justify-center gap-2 rounded-pill bg-sand/80 border border-border/40 py-4 font-sans text-base font-semibold text-bark/60 cursor-not-allowed"
+                    >
+                      Select Items to Checkout
+                    </button>
+                  );
+                }
                 return (
                   <Link
-                    href="/checkout"
+                    href={`/checkout?selected=${activeSelectedItems.map(item => item.cartItemId).join(",")}`}
                     className="flex items-center justify-center gap-2 rounded-pill bg-espresso py-4 font-sans text-base font-semibold text-white shadow-soft transition hover:bg-gold"
                   >
                     Proceed to Checkout

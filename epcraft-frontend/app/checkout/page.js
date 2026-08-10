@@ -13,7 +13,15 @@ const steps = ["Shipping", "Payment", "Review"];
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { cart, cartSubtotal } = useShop();
+  const { cart, removeFromCart } = useShop();
+
+  const selectedParam = searchParams.get("selected");
+  const selectedItemIds = selectedParam ? selectedParam.split(",") : null;
+  const checkoutCart = selectedItemIds
+    ? cart.filter((item) => selectedItemIds.includes(String(item.cartItemId)))
+    : cart;
+
+  const checkoutSubtotal = checkoutCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Pre-fill states from user profile
   const [name, setName] = useState("");
@@ -86,15 +94,15 @@ function CheckoutContent() {
   }, [checkoutError, cancelledOrderId]);
 
   const shipping = delivery === "express" ? settings.express_shipping : settings.standard_shipping;
-  const tax = Math.round(cartSubtotal * (settings.tax_percentage / 100) * 100) / 100;
-  const total = cartSubtotal + shipping + tax;
+  const tax = Math.round(checkoutSubtotal * (settings.tax_percentage / 100) * 100) / 100;
+  const total = checkoutSubtotal + shipping + tax;
 
   async function handlePlaceOrder(e) {
     e.preventDefault();
     setError("");
 
-    if (cart.length === 0) {
-      setError("Your cart is empty!");
+    if (checkoutCart.length === 0) {
+      setError("Your checkout cart is empty!");
       return;
     }
 
@@ -108,7 +116,7 @@ function CheckoutContent() {
         body: JSON.stringify({
           shippingAddress: { name, address, city, zip, phone },
           deliveryMethod: delivery,
-          cartItems: cart.map((item) => ({
+          cartItems: checkoutCart.map((item) => ({
             id: item.id,
             quantity: item.quantity,
             customOptions: item.customOptions,
@@ -126,6 +134,13 @@ function CheckoutContent() {
 
       // 2. Redirect user to PayHere sandbox payment page
       const payhereParams = resData.payhereParams;
+
+      // Clear the checked out items from cart
+      try {
+        await Promise.all(checkoutCart.map((item) => removeFromCart(item.cartItemId)));
+      } catch (clearErr) {
+        console.error("Failed to clear purchased items from cart:", clearErr);
+      }
 
       const form = document.createElement("form");
       form.method = "POST";
@@ -287,10 +302,10 @@ function CheckoutContent() {
             <h3 className="font-serif text-2xl font-bold text-espresso">Order Summary</h3>
 
             <div className="flex flex-col gap-4 max-h-80 overflow-y-auto">
-              {cart.length === 0 ? (
+              {checkoutCart.length === 0 ? (
                 <p className="font-sans text-sm text-bark italic">No items selected.</p>
               ) : (
-                cart.map((item) => (
+                checkoutCart.map((item) => (
                   <div key={item.cartItemId} className="flex items-center gap-4 border-b border-border/30 pb-3">
                     <div className="h-16 w-16 shrink-0 rounded-lg bg-sand flex items-center justify-center font-serif text-[10px] text-bark overflow-hidden relative border border-border/30">
                       {item.image ? (
@@ -320,7 +335,7 @@ function CheckoutContent() {
             <div className="flex flex-col gap-3 font-sans text-sm text-bark">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="font-medium text-ink">{formatPrice(cartSubtotal)}</span>
+                <span className="font-medium text-ink">{formatPrice(checkoutSubtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -341,9 +356,9 @@ function CheckoutContent() {
 
             <button
               type="submit"
-              disabled={cart.length === 0 || loading}
+              disabled={checkoutCart.length === 0 || loading}
               className={`flex items-center justify-center gap-2 rounded-pill py-4 font-sans text-base font-semibold text-white shadow-soft transition-colors ${
-                cart.length === 0 || loading ? "bg-sand text-bark/50 cursor-not-allowed" : "bg-espresso hover:bg-gold"
+                checkoutCart.length === 0 || loading ? "bg-sand text-bark/50 cursor-not-allowed" : "bg-espresso hover:bg-gold"
               }`}
             >
               {loading ? (
