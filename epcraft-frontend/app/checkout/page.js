@@ -29,6 +29,58 @@ function CheckoutContent() {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [phone, setPhone] = useState("");
+
+  const [savedAddresses, setSavedAddresses] = useState({
+    primary: null,
+    secondary: null,
+  });
+  const [addressSource, setAddressSource] = useState("new"); // 'primary' | 'secondary' | 'new'
+
+  const parseAddress = (addrStr, defaultName = "", defaultPhone = "") => {
+    const defaultVal = { name: defaultName, phone: defaultPhone, street: "", city: "", zip: "", country: "Sri Lanka" };
+    if (!addrStr) return null;
+
+    if (addrStr.trim().startsWith("{")) {
+      try {
+        return { ...defaultVal, ...JSON.parse(addrStr) };
+      } catch (e) {
+        console.error("Failed to parse JSON address", e);
+      }
+    }
+
+    const parts = addrStr.split(",").map((s) => s.trim());
+    return {
+      name: defaultName,
+      phone: defaultPhone,
+      street: parts[0] || "",
+      city: parts[1] || "",
+      zip: parts[2] || "",
+      country: parts[3] || "Sri Lanka",
+    };
+  };
+
+  const handleAddressSourceChange = (source) => {
+    setAddressSource(source);
+    if (source === "primary" && savedAddresses.primary) {
+      setName(savedAddresses.primary.name);
+      setAddress(savedAddresses.primary.street);
+      setPhone(savedAddresses.primary.phone);
+      setCity(savedAddresses.primary.city);
+      setZip(savedAddresses.primary.zip);
+    } else if (source === "secondary" && savedAddresses.secondary) {
+      setName(savedAddresses.secondary.name);
+      setAddress(savedAddresses.secondary.street);
+      setPhone(savedAddresses.secondary.phone);
+      setCity(savedAddresses.secondary.city);
+      setZip(savedAddresses.secondary.zip);
+    } else if (source === "new") {
+      setName("");
+      setAddress("");
+      setPhone("");
+      setCity("");
+      setZip("");
+    }
+  };
   
   const [delivery, setDelivery] = useState("standard");
   const [payment, setPayment] = useState("card");
@@ -56,13 +108,24 @@ function CheckoutContent() {
           .single();
 
         if (profile) {
-          setName(profile.name || "");
-          setAddress(profile.address || "");
-          setPhone(profile.phone || "");
-          if (profile.address && profile.address.includes(",")) {
-            const parts = profile.address.split(",").map((s) => s.trim());
-            if (parts.length >= 2) setCity((prev) => prev || parts[parts.length - 2]);
-            if (parts.length >= 3) setZip((prev) => prev || parts[parts.length - 1]);
+          const parsedPrimary = parseAddress(profile.address, profile.name || "", profile.phone || "");
+          const parsedSecondary = parseAddress(profile.secondary_address, "", "");
+          
+          setSavedAddresses({
+            primary: parsedPrimary,
+            secondary: parsedSecondary,
+          });
+
+          // Default selection: if primary address exists, use it!
+          if (parsedPrimary) {
+            setAddressSource("primary");
+            setName(parsedPrimary.name);
+            setAddress(parsedPrimary.street);
+            setPhone(parsedPrimary.phone);
+            setCity(parsedPrimary.city);
+            setZip(parsedPrimary.zip);
+          } else {
+            setAddressSource("new");
           }
         }
       }
@@ -205,6 +268,73 @@ function CheckoutContent() {
           {/* Shipping Address */}
           <section className="flex flex-col gap-6 rounded-2xl bg-white p-8 shadow-card border border-border/40">
             <h2 className="font-serif text-2xl font-bold text-espresso">Shipping Address</h2>
+
+            {/* Saved Address Selector */}
+            {(savedAddresses.primary || savedAddresses.secondary) && (
+              <div className="flex flex-col gap-3 p-4 bg-cream/35 border border-border/30 rounded-2xl">
+                <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
+                  Use a Saved Destination
+                </span>
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-4">
+                  {savedAddresses.primary && (
+                    <label className={`flex flex-1 items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition-all ${
+                      addressSource === "primary" ? "border-espresso bg-espresso/5 shadow-soft" : "border-border/60 hover:bg-cream/10"
+                    }`}>
+                      <input
+                        type="radio"
+                        name="addressSource"
+                        value="primary"
+                        checked={addressSource === "primary"}
+                        onChange={() => handleAddressSourceChange("primary")}
+                        className="mt-1 h-4 w-4 text-espresso accent-espresso focus:ring-espresso"
+                      />
+                      <div className="font-sans text-xs text-bark">
+                        <span className="font-bold text-espresso block mb-0.5">Primary Address</span>
+                        <p className="font-medium text-ink truncate max-w-[200px]">{savedAddresses.primary.name}</p>
+                        <p className="truncate max-w-[200px]">{savedAddresses.primary.street}</p>
+                      </div>
+                    </label>
+                  )}
+                  {savedAddresses.secondary && (
+                    <label className={`flex flex-1 items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition-all ${
+                      addressSource === "secondary" ? "border-espresso bg-espresso/5 shadow-soft" : "border-border/60 hover:bg-cream/10"
+                    }`}>
+                      <input
+                        type="radio"
+                        name="addressSource"
+                        value="secondary"
+                        checked={addressSource === "secondary"}
+                        onChange={() => handleAddressSourceChange("secondary")}
+                        className="mt-1 h-4 w-4 text-espresso accent-espresso focus:ring-espresso"
+                      />
+                      <div className="font-sans text-xs text-bark">
+                        <span className="font-bold text-espresso block mb-0.5">Secondary Address</span>
+                        <p className="font-medium text-ink truncate max-w-[200px]">{savedAddresses.secondary.name}</p>
+                        <p className="truncate max-w-[200px]">{savedAddresses.secondary.street}</p>
+                      </div>
+                    </label>
+                  )}
+                  <label className={`flex flex-1 items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition-all ${
+                    addressSource === "new" ? "border-espresso bg-espresso/5 shadow-soft" : "border-border/60 hover:bg-cream/10"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="addressSource"
+                      value="new"
+                      checked={addressSource === "new"}
+                      onChange={() => handleAddressSourceChange("new")}
+                      className="mt-1 h-4 w-4 text-espresso accent-espresso focus:ring-espresso"
+                    />
+                    <div className="font-sans text-xs text-bark">
+                      <span className="font-bold text-espresso block mb-0.5">Custom Address</span>
+                      <p className="font-medium text-ink">Enter details below</p>
+                      <p className="opacity-70">Add a different delivery address</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <Field
                 label="Full Name"
