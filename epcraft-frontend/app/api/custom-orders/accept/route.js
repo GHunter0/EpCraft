@@ -123,6 +123,16 @@ export async function POST(request) {
     const merchantId = process.env.PAYHERE_MERCHANT_ID
     const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET
 
+    if (!merchantId || !merchantSecret) {
+      const missing = [];
+      if (!merchantId) missing.push("PAYHERE_MERCHANT_ID");
+      if (!merchantSecret) missing.push("PAYHERE_MERCHANT_SECRET");
+      console.error(`PayHere Configuration Error: Missing ${missing.join(" and ")}`);
+      return NextResponse.json({ 
+        error: `Configuration Error: Missing ${missing.join(" and ")} on Vercel.`
+      }, { status: 500 });
+    }
+
     const hashedSecret = crypto
       .createHash("md5")
       .update(merchantSecret)

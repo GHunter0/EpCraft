@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 export async function POST(request) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -136,6 +136,16 @@ export async function POST(request) {
     // PayHere parameters generation
     const merchantId = process.env.PAYHERE_MERCHANT_ID
     const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET
+
+    if (!merchantId || !merchantSecret) {
+      const missing = [];
+      if (!merchantId) missing.push("PAYHERE_MERCHANT_ID");
+      if (!merchantSecret) missing.push("PAYHERE_MERCHANT_SECRET");
+      console.error(`PayHere Configuration Error: Missing ${missing.join(" and ")}`);
+      return NextResponse.json({ 
+        error: `Configuration Error: Missing ${missing.join(" and ")} on Vercel.`
+      }, { status: 500 });
+    }
     
     // Hash formula: UPPERCASE(MD5(merchant_id + order_id + formatted_amount + currency + UPPERCASE(MD5(merchant_secret))))
     const hashedSecret = crypto

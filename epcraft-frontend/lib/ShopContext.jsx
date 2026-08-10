@@ -37,7 +37,9 @@ export function ShopProvider({ children }) {
   };
 
   useEffect(() => {
-    refreshStockLevels();
+    Promise.resolve().then(() => {
+      refreshStockLevels();
+    });
   }, [cart.map(item => item.id).join(",")]);
   
   // Keep refs for rolling back state in case of server failures
@@ -49,31 +51,6 @@ export function ShopProvider({ children }) {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // 1. Listen to Auth State Changes & Load User
-  useEffect(() => {
-    async function initAuth() {
-      const { data: { user: initialUser } } = await supabase.auth.getUser();
-      setUser(initialUser);
-      await loadShopData(initialUser);
-    }
-    
-    initAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      
-      if (event === "SIGNED_IN" && currentUser) {
-        await handleMergeOnLogin(currentUser);
-      } else {
-        await loadShopData(currentUser);
-      }
-    });
-
-    return () => {
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
 
   // 2. Load Cart & Wishlist (Handles both guests and authenticated users)
   const loadShopData = async (currentUser) => {
@@ -226,6 +203,32 @@ export function ShopProvider({ children }) {
       await loadShopData(currentUser);
     }
   };
+
+  // 1. Listen to Auth State Changes & Load User
+  useEffect(() => {
+    async function initAuth() {
+      const { data: { user: initialUser } } = await supabase.auth.getUser();
+      setUser(initialUser);
+      await loadShopData(initialUser);
+    }
+    
+    initAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (event === "SIGNED_IN" && currentUser) {
+        await handleMergeOnLogin(currentUser);
+      } else {
+        await loadShopData(currentUser);
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   // 5. Actions (CRUD with Optimistic UI updates)
   const addToCart = async (product, quantity = 1, customOptions = null) => {

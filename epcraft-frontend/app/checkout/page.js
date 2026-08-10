@@ -78,7 +78,9 @@ function CheckoutContent() {
 
     if (checkoutError === "cancelled") {
       if (cancelledOrderId) {
-        setError(`Payment was cancelled for Order #${(cancelledOrderId || "").slice(0, 8)}. You can edit details and retry.`);
+        Promise.resolve().then(() => {
+          setError(`Payment was cancelled for Order #${(cancelledOrderId || "").slice(0, 8)}. You can edit details and retry.`);
+        });
       }
     }
   }, [checkoutError, cancelledOrderId]);

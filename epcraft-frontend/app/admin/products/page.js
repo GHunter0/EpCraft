@@ -30,10 +30,6 @@ export default function AdminProductsPage() {
   const [stockFilter, setStockFilter] = useState("");
   const [togglingId, setTogglingId] = useState(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   async function fetchProducts() {
     setLoading(true);
     const { data, error } = await supabase
@@ -50,6 +46,12 @@ export default function AdminProductsPage() {
     setProducts(data || []);
     setLoading(false);
   }
+
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      fetchProducts();
+    });
+  }, []);
 
   async function handleToggleStock(productId, currentInStock) {
     setTogglingId(productId);

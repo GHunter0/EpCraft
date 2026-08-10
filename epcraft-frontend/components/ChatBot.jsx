@@ -26,7 +26,9 @@ export default function ChatBot({ externalOpen, setExternalOpen }) {
   // Sync external open trigger from Navbar if passed
   useEffect(() => {
     if (typeof externalOpen === "boolean") {
-      setIsOpen(externalOpen);
+      Promise.resolve().then(() => {
+        setIsOpen(externalOpen);
+      });
     }
   }, [externalOpen]);
 

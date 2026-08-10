@@ -26,10 +26,6 @@ export default function AdminCustomersPage() {
   const [selectedCustomerOrders, setSelectedCustomerOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
-  useEffect(() => {
-    fetchCustomersAndOrders();
-  }, []);
-
   async function fetchCustomersAndOrders() {
     setLoading(true);
     try {
@@ -75,6 +71,12 @@ export default function AdminCustomersPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      fetchCustomersAndOrders();
+    });
+  }, []);
 
   // Load selected customer's full order details
   async function handleSelectCustomer(id) {

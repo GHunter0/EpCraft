@@ -17,9 +17,13 @@ function SearchResultsContent() {
   const [searchInput, setSearchInput] = useState(query);
 
   useEffect(() => {
-    setSearchInput(query);
+    Promise.resolve().then(() => {
+      setSearchInput(query);
+    });
     if (!query.trim()) {
-      setResults([]);
+      Promise.resolve().then(() => {
+        setResults([]);
+      });
       return;
     }
 
@@ -112,7 +116,7 @@ function SearchResultsContent() {
             <PackageOpen size={48} className="mx-auto text-bark/20 mb-4" />
             <h3 className="font-serif text-lg font-bold text-espresso">No Results Found</h3>
             <p className="font-sans text-sm text-bark mt-1">
-              We couldn't find matches for "{query}". Try checking spelling, using more generic terms, or contact us for custom order commissions.
+              We couldn&apos;t find matches for &quot;{query}&quot;. Try checking spelling, using more generic terms, or contact us for custom order commissions.
             </p>
           </div>
         ) : (

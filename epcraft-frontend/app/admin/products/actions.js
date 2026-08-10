@@ -33,7 +33,7 @@ export async function toggleProductStock(productId) {
   const { error: authErr } = await requireAdmin();
   if (authErr) return { error: authErr };
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch current value
   const { data: product, error: fetchErr } = await supabase
@@ -120,7 +120,7 @@ export async function createProduct(formData) {
   const { valid, errors } = validateProductFields(fields);
   if (!valid) return { validationErrors: errors };
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check for duplicate ID
   const { data: existing } = await supabase
@@ -182,7 +182,7 @@ export async function updateProduct(productId, formData) {
   const { valid, errors } = validateProductFields(fields);
   if (!valid) return { validationErrors: errors };
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error: updateErr } = await supabase
     .from("products")
@@ -220,7 +220,7 @@ export async function deleteProduct(productId) {
   const { error: authErr } = await requireAdmin();
   if (authErr) return { error: authErr };
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error: deleteErr } = await supabase
     .from("products")

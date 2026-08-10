@@ -84,7 +84,7 @@ export async function updateStoreSettings(formData) {
     return { validationErrors: errors };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error: updateErr } = await supabase
     .from("store_settings")
     .update(fields)

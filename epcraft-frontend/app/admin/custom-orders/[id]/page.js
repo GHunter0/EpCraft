@@ -126,7 +126,9 @@ export default function AdminCustomOrderDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    fetchRequest();
+    Promise.resolve().then(() => {
+      fetchRequest();
+    });
   }, [fetchRequest]);
 
   const handleSubmitQuote = async (e) => {
@@ -602,7 +604,7 @@ export default function AdminCustomOrderDetailPage() {
                 ) : (
                   <>
                     <Send size={16} />
-                    Submit Quote & Move to "Quoted"
+                    {'Submit Quote & Move to "Quoted"'}
                   </>
                 )}
               </button>

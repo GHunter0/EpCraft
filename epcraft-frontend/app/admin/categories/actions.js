@@ -49,7 +49,7 @@ export async function saveCategory(formData) {
     return { validationErrors: errors };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   if (!isEdit) {
     // Check duplicate ID
@@ -93,7 +93,7 @@ export async function deleteCategory(id) {
   const { error: authErr } = await requireAdmin();
   if (authErr) return { error: authErr };
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error: deleteErr } = await supabase
     .from("categories")
     .delete()

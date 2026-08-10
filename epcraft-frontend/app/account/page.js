@@ -276,15 +276,15 @@ export default function AccountOverviewPage() {
 
               {orders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="font-sans text-base text-bark">You haven't placed any orders yet.</p>
+                  <p className="font-sans text-base text-bark">You haven&apos;t placed any orders yet.</p>
                   <Link href="/shop" className="mt-4 btn-dark px-6 py-2.5">
                     Explore Shop
                   </Link>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4 divide-y divide-border/20">
-                  {orders.map((o) => (
-                    <div key={o.id || Math.random()} className="flex justify-between items-center pt-4 first:pt-0">
+                  {orders.map((o, idx) => (
+                    <div key={o.id || idx} className="flex justify-between items-center pt-4 first:pt-0">
                       <div>
                         <p className="font-serif text-base font-bold text-espresso">
                           Order #{(o?.id || "").slice(0, 8).toUpperCase()}
@@ -335,7 +335,7 @@ export default function AccountOverviewPage() {
                           </p>
                           {req.engraving_text && (
                             <p className="font-sans text-xs text-gold font-semibold mt-1">
-                              Engraving: "{req.engraving_text}"
+                              Engraving: &quot;{req.engraving_text}&quot;
                             </p>
                           )}
                         </div>
