@@ -17,9 +17,13 @@ export default function Footer() {
       <div className="container-page grid grid-cols-1 gap-12 md:grid-cols-4">
         <div>
           <p className="font-serif text-3xl font-semibold text-espresso">EpCraft</p>
-          <p className="mt-4 max-w-xs font-sans font-light text-lg leading-relaxed text-bark">
+          <p className="mt-3 max-w-xs font-sans font-light text-base leading-relaxed text-bark">
             Crafting the future of wood with the precision of AI and the soul of the artisan.
           </p>
+          <div className="mt-4 flex flex-col gap-1 font-sans text-xs text-bark/80">
+            <p>📍 No. 42 Artisan Way, Kandy Road, Colombo, Sri Lanka</p>
+            <p>📞 +94 (075) 234-0642 • epcraft@gmail.com</p>
+          </div>
           <div className="mt-8 flex gap-3">
             <a
               href="#"

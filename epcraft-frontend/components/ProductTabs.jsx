@@ -55,27 +55,20 @@ export default function ProductTabs({ product }) {
 
         <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-border/10 bg-white p-8 shadow-card">
           <div className="flex items-center gap-6">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-pill bg-sand" />
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-pill flex items-center justify-center font-serif text-2xl font-bold text-white bg-espresso">
+              Ep
+            </div>
             <div>
-              <h4 className="font-serif text-2xl text-[#2b2420]">Maker: {product.maker}</h4>
-              <p className="font-sans text-xs font-medium text-walnut">Master Woodworker</p>
+              <h4 className="font-serif text-xl font-bold text-espresso">EpCraft Studio</h4>
+              <p className="font-sans text-xs font-semibold text-gold">Master Artisan Workshop</p>
               <p className="mt-1 flex items-center gap-1 font-sans text-xs text-bark">
-                <MapPin size={13} /> Workshop: Cotswolds, UK
+                <MapPin size={13} /> Workshop: Colombo, Sri Lanka
               </p>
             </div>
           </div>
-          <p className="font-sans italic leading-relaxed text-bark">
-            &ldquo;I believe every piece of wood has a hidden geometry. My work is simply to
-            listen to the grain and reveal it in a way that serves the home for generations.&rdquo;
+          <p className="font-sans italic leading-relaxed text-bark text-sm">
+            &ldquo;Every piece of timber has a unique soul. My mission is to listen to the natural grain and shape custom heirlooms built to last generations.&rdquo;
           </p>
-          <div className="flex gap-3">
-            <button className="rounded-pill bg-cream px-4 py-2.5 font-sans text-xs font-medium text-espresso">
-              Follow Artist
-            </button>
-            <button className="rounded-pill border border-border/40 px-4 py-2.5 font-sans text-xs font-medium text-bark">
-              View Portfolio
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -35,8 +35,9 @@ function SectionCard({ title, icon: Icon, children }) {
 }
 
 export default async function AdminOrderDetailPage({ params }) {
-  const supabase = createClient();
-  const { id } = params;
+  const supabase = await createClient();
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   const { data: order, error } = await supabase
     .from("orders")

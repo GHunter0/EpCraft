@@ -5,7 +5,13 @@ export default function NotFound() {
   return (
     <div className="container-page flex flex-col items-center gap-16 py-24 text-center">
       <div className="relative">
-        <div className="h-80 w-80 rounded-xl bg-sand shadow-card" />
+        <div className="h-80 w-80 rounded-2xl bg-sand shadow-card overflow-hidden relative border border-border/30">
+          <img
+            src="https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/404.jpg"
+            alt="404 - Page Not Found"
+            className="h-full w-full object-cover"
+          />
+        </div>
         <div className="pointer-events-none absolute -left-4 -top-4 h-24 w-24 border-l-2 border-t-2 border-gold/40" />
         <div className="pointer-events-none absolute -bottom-4 -right-4 h-24 w-24 border-b-2 border-r-2 border-gold/40" />
       </div>

@@ -20,8 +20,12 @@ export default async function HomePage() {
     <div>
       {/* Hero */}
       <section className="relative flex h-[600px] w-full items-center overflow-hidden md:h-[819px]">
-        <div className="absolute inset-0 bg-gradient-to-br from-espresso/40 to-ink/60" />
-        <div className="absolute inset-0 -z-10 bg-sand" />
+        <img
+          src="https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/homepage.jpg"
+          alt="EpCraft Craftsmanship"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-espresso/65 to-transparent" />
         <div className="container-page relative flex flex-col gap-4 text-white">
           <div className="max-w-2xl">
             <h1 className="font-serif text-3xl leading-tight md:text-5xl">

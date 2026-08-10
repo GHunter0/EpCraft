@@ -12,17 +12,12 @@ export default function NewProductPage() {
   const supabase = createClient();
 
   const [categories, setCategories] = useState([]);
-  const [makers, setMakers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadLookups() {
-      const [catRes, makerRes] = await Promise.all([
-        supabase.from("categories").select("id, name").order("name"),
-        supabase.from("makers").select("id, name").order("name"),
-      ]);
+      const catRes = await supabase.from("categories").select("id, name").order("name");
       setCategories(catRes.data || []);
-      setMakers(makerRes.data || []);
       setLoading(false);
     }
     loadLookups();
@@ -51,7 +46,6 @@ export default function NewProductPage() {
   return (
     <AdminProductForm
       categories={categories}
-      makers={makers}
       onSubmit={handleCreate}
       submitLabel="Create Product"
     />

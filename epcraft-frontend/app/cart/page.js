@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowRight, ShieldCheck, ShoppingBag } from "lucide-react";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
 
 export default function CartPage() {
@@ -61,8 +61,16 @@ export default function CartPage() {
                   key={item.cartItemId}
                   className="flex gap-6 border-b border-border/40 pb-8"
                 >
-                  <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-xl bg-sand p-2 text-center font-serif text-xs text-bark/60">
-                    {item.name}
+                  <div className="h-32 w-32 shrink-0 rounded-xl bg-sand flex items-center justify-center font-serif text-xs text-bark/60 overflow-hidden relative border border-border/30">
+                    {item.image ? (
+                      <img
+                        src={getProductImageUrl(item.image)}
+                        alt={item.name}
+                        className="h-full w-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      item.name
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex items-start justify-between gap-4">

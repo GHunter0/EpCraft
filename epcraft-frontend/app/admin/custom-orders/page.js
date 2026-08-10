@@ -30,8 +30,9 @@ const STATUS_STYLES = {
 const ALL_STATUSES = ["pending_review", "quoted", "accepted", "declined"];
 
 export default async function AdminCustomOrdersPage({ searchParams }) {
-  const supabase = createClient();
-  const filterStatus = searchParams?.status || "";
+  const supabase = await createClient();
+  const resolvedSearchParams = await searchParams;
+  const filterStatus = resolvedSearchParams?.status || "";
 
   let query = supabase
     .from("custom_order_requests")

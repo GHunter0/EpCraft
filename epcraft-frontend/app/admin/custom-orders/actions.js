@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function submitQuote(requestId, formData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Re-verify admin on every mutation
   const {

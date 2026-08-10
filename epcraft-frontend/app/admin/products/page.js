@@ -40,8 +40,7 @@ export default function AdminProductsPage() {
       .from("products")
       .select(
         `id, name, price, in_stock, image_url, wood_type, material, created_at,
-         category:categories!products_category_id_fkey ( id, name ),
-         maker:makers!products_maker_id_fkey ( id, name )`
+         category:categories!products_category_id_fkey ( id, name )`
       )
       .order("created_at", { ascending: false });
 
@@ -194,7 +193,6 @@ export default function AdminProductsPage() {
                     "",
                     "Product",
                     "Category",
-                    "Maker",
                     "Price",
                     "Stock",
                     "",
@@ -245,13 +243,6 @@ export default function AdminProductsPage() {
                       <td className="px-5 py-4">
                         <span className="font-sans text-sm text-ink">
                           {p.category?.name || "—"}
-                        </span>
-                      </td>
-
-                      {/* Maker */}
-                      <td className="px-5 py-4">
-                        <span className="font-sans text-sm text-ink">
-                          {p.maker?.name || "—"}
                         </span>
                       </td>
 

@@ -284,10 +284,10 @@ export default function AccountOverviewPage() {
               ) : (
                 <div className="flex flex-col gap-4 divide-y divide-border/20">
                   {orders.map((o) => (
-                    <div key={o.id} className="flex justify-between items-center pt-4 first:pt-0">
+                    <div key={o.id || Math.random()} className="flex justify-between items-center pt-4 first:pt-0">
                       <div>
                         <p className="font-serif text-base font-bold text-espresso">
-                          Order #{o.id.slice(0, 8).toUpperCase()}
+                          Order #{(o?.id || "").slice(0, 8).toUpperCase()}
                         </p>
                         <p className="font-sans text-xs text-bark">
                           Placed on {new Date(o.created_at).toLocaleDateString()}

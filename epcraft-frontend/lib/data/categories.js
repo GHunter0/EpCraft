@@ -25,19 +25,3 @@ export async function getCategories() {
   }))
 }
 
-/**
- * Fetch makers from Supabase.
- */
-export async function getMakers() {
-  const { data, error } = await supabase
-    .from('makers')
-    .select('*')
-    .order('name')
-
-  if (error) {
-    console.error("Error fetching makers:", error)
-    return []
-  }
-
-  return data || []
-}

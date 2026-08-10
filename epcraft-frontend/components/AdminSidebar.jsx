@@ -8,7 +8,6 @@ import {
   Sliders,
   Package,
   FolderTree,
-  Users,
   User,
   Settings,
   Store,
@@ -23,7 +22,6 @@ const sidebarLinks = [
   { href: "/admin/custom-orders", label: "Custom Orders", icon: Sliders },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
-  { href: "/admin/makers", label: "Makers", icon: Users },
   { href: "/admin/customers", label: "Customers", icon: User },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];

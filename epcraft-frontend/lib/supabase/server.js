@@ -6,8 +6,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
  * Creates a Supabase client for Server Components, Server Actions, and Route Handlers using cookies.
  * Fallbacks are provided to prevent static prerendering build failures when env vars are unset.
  */
-export function createClient() {
-  const cookieStore = cookies()
+export async function createClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co',

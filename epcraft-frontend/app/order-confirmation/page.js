@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Check, Loader2 } from "lucide-react";
 import { useShop } from "@/lib/ShopContext";
 import { createClient } from "@/lib/supabase/client";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 
 function OrderConfirmationContent() {
   const searchParams = useSearchParams();
@@ -123,7 +123,7 @@ function OrderConfirmationContent() {
           </h1>
           <div className="flex flex-col gap-1">
             <p className="font-sans text-sm font-semibold tracking-widest text-bark">
-              ORDER #{order.id.slice(0, 8).toUpperCase()}
+              ORDER #{(order?.id || "").slice(0, 8).toUpperCase()}
             </p>
             <p className="font-sans text-lg text-bark">
               Estimated delivery: <span className="text-espresso font-semibold">{formattedDelivery}</span>
@@ -138,11 +138,21 @@ function OrderConfirmationContent() {
             Order Summary
           </h2>
           <div className="flex flex-col gap-4 divide-y divide-border/20">
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center gap-4 pt-4 first:pt-0">
-                <div className="h-16 w-16 shrink-0 rounded-lg bg-sand flex items-center justify-center font-serif text-[10px] text-bark">
-                  {item.product?.name}
-                </div>
+            {items.map((item) => {
+              const imgUrl = getProductImageUrl(item.product?.image_url);
+              return (
+                <div key={item.id} className="flex items-center gap-4 pt-4 first:pt-0">
+                  <div className="h-16 w-16 shrink-0 rounded-lg bg-sand flex items-center justify-center font-serif text-[10px] text-bark overflow-hidden relative border border-border/30">
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt={item.product?.name || "Bespoke Woodcraft"}
+                        className="h-full w-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      item.product?.name || "Bespoke Piece"
+                    )}
+                  </div>
                 <div className="flex-1">
                   <p className="font-sans text-sm font-semibold tracking-wide text-ink">
                     {item.product?.name || "Bespoke Woodcraft"}
@@ -160,7 +170,8 @@ function OrderConfirmationContent() {
                   {formatPrice(item.price_at_purchase * item.quantity)}
                 </p>
               </div>
-            ))}
+            );
+          })}
           </div>
 
           <div className="flex flex-col gap-2 font-sans text-sm text-bark border-t border-border/40 pt-4">

@@ -20,8 +20,9 @@ const PAYMENT_STYLES = {
 const ALL_STATUSES = ["pending_payment", "processing", "shipped", "delivered"];
 
 export default async function AdminOrdersPage({ searchParams }) {
-  const supabase = createClient();
-  const filterStatus = searchParams?.status || "";
+  const supabase = await createClient();
+  const resolvedSearchParams = await searchParams;
+  const filterStatus = resolvedSearchParams?.status || "";
 
   let query = supabase
     .from("orders")

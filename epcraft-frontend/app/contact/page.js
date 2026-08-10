@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, MessageCircle, Mail, Phone, Sparkles } from "lucide-react";
+import { ChevronDown, MessageCircle, Mail, Phone, MapPin, Sparkles } from "lucide-react";
 
 const faqs = [
   {
@@ -214,17 +214,23 @@ export default function ContactPage() {
           <div className="h-px w-24 bg-walnut/50" />
         </div>
 
-        <div className="grid w-full max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="grid w-full max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <ContactCard
+            icon={MapPin}
+            title="Workshop & Showroom"
+            detail="Visit our artisan workshop & studio."
+            value="No. 42 Artisan Way, Kandy Road, Colombo"
+          />
           <ContactCard
             icon={MessageCircle}
             title="WhatsApp"
-            detail="Real-time chat with our showroom concierge."
+            detail="Real-time chat with our concierge."
             value="+94 (075) 234-0642"
           />
           <ContactCard
             icon={Mail}
             title="Email"
-            detail="For detailed inquiries or bulk order requests."
+            detail="For detailed inquiries or custom quotes."
             value="epcraft@gmail.com"
           />
           <ContactCard

@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, ShieldCheck, ArrowLeft, Loader2 } from "lucide-react";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
 import { createClient } from "@/lib/supabase/client";
 
@@ -51,6 +51,11 @@ function CheckoutContent() {
           setName(profile.name || "");
           setAddress(profile.address || "");
           setPhone(profile.phone || "");
+          if (profile.address && profile.address.includes(",")) {
+            const parts = profile.address.split(",").map((s) => s.trim());
+            if (parts.length >= 2) setCity((prev) => prev || parts[parts.length - 2]);
+            if (parts.length >= 3) setZip((prev) => prev || parts[parts.length - 1]);
+          }
         }
       }
     }
@@ -71,8 +76,10 @@ function CheckoutContent() {
     loadUserProfile();
     loadStoreSettings();
 
-    if (checkoutError === "cancelled" && cancelledOrderId) {
-      setError(`Payment was cancelled for Order #${cancelledOrderId.slice(0, 8)}. You can edit details and retry.`);
+    if (checkoutError === "cancelled") {
+      if (cancelledOrderId) {
+        setError(`Payment was cancelled for Order #${(cancelledOrderId || "").slice(0, 8)}. You can edit details and retry.`);
+      }
     }
   }, [checkoutError, cancelledOrderId]);
 
@@ -283,8 +290,16 @@ function CheckoutContent() {
               ) : (
                 cart.map((item) => (
                   <div key={item.cartItemId} className="flex items-center gap-4 border-b border-border/30 pb-3">
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-sand text-center font-serif text-[10px] text-bark">
-                      {item.name}
+                    <div className="h-16 w-16 shrink-0 rounded-lg bg-sand flex items-center justify-center font-serif text-[10px] text-bark overflow-hidden relative border border-border/30">
+                      {item.image ? (
+                        <img
+                          src={getProductImageUrl(item.image)}
+                          alt={item.name}
+                          className="h-full w-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        item.name
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="font-serif text-sm font-bold text-espresso">{item.name}</p>

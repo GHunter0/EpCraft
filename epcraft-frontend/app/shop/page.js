@@ -12,12 +12,13 @@ export const metadata = {
 };
 
 export default async function ShopPage({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
   // Extract parameters
-  const category = searchParams?.category || null;
-  const wood = searchParams?.wood || null;
-  const inStockOnly = searchParams?.inStock === "true";
-  const sort = searchParams?.sort || "Best Selling";
-  const searchQuery = searchParams?.search || null;
+  const category = resolvedSearchParams?.category || null;
+  const wood = resolvedSearchParams?.wood || null;
+  const inStockOnly = resolvedSearchParams?.inStock === "true";
+  const sort = resolvedSearchParams?.sort || "Best Selling";
+  const searchQuery = resolvedSearchParams?.search || null;
 
   // Parallel fetch: filtered products, all categories, and all products to extract dynamic wood types
   const [filteredProducts, categories, allProducts] = await Promise.all([

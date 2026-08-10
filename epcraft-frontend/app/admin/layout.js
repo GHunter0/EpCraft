@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function AdminLayout({ children }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // 1. Get authenticated user session
   const {

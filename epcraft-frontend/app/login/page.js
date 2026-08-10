@@ -76,15 +76,13 @@ function LoginForm() {
   };
 
   return (
-    <div className="grid min-h-[720px] grid-cols-1 md:grid-cols-2">
-      <div className="relative hidden items-end bg-gradient-to-br from-espresso to-ink p-16 md:flex">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative flex flex-col gap-4 text-white">
-          <h1 className="font-serif text-5xl font-bold tracking-tight">EpCraft</h1>
-          <p className="max-w-sm text-lg opacity-90">
-            Where traditional craftsmanship meets the precision of the modern era.
-          </p>
-        </div>
+    <div className="grid min-h-[820px] grid-cols-1 md:grid-cols-2">
+      <div className="relative hidden items-end overflow-hidden p-16 md:flex bg-espresso">
+        <img
+          src="https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/login-img.jpeg"
+          alt="EpCraft Woodworking"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
       </div>
 
       <div className="flex items-center justify-center bg-cream px-8 py-16">

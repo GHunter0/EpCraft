@@ -45,7 +45,7 @@ export default function ProductCard({ product }) {
       </div>
       <div className="flex flex-col items-center gap-1 text-center">
         <span className="rounded-pill bg-cream px-3 py-1 font-sans text-[10px] uppercase tracking-widest text-bark">
-          Handmade by {product.maker}
+          Handcrafted by EpCraft
         </span>
         <p className="pt-2 font-serif text-base text-ink">{product.name}</p>
         <p className="font-sans text-base text-espresso">{formatPrice(product.price)}</p>

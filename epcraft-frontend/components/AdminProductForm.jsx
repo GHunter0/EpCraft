@@ -26,7 +26,6 @@ import { getProductImageUrl } from "@/lib/products";
 export default function AdminProductForm({
   initialData = null,
   categories = [],
-  makers = [],
   onSubmit,
   submitLabel = "Save Product",
 }) {
@@ -39,7 +38,6 @@ export default function AdminProductForm({
   const [name, setName] = useState(initialData?.name || "");
   const [price, setPrice] = useState(initialData?.price?.toString() || "");
   const [categoryId, setCategoryId] = useState(initialData?.category_id || "");
-  const [makerId, setMakerId] = useState(initialData?.maker_id || "");
   const [material, setMaterial] = useState(initialData?.material || "");
   const [woodType, setWoodType] = useState(initialData?.wood_type || "");
   const [description, setDescription] = useState(
@@ -140,7 +138,6 @@ export default function AdminProductForm({
     fd.set("name", name);
     fd.set("price", price);
     fd.set("category_id", categoryId);
-    fd.set("maker_id", makerId);
     fd.set("material", material);
     fd.set("wood_type", woodType);
     fd.set("description", description);
@@ -404,25 +401,6 @@ export default function AdminProductForm({
                 ))}
               </select>
               {fieldError("category_id")}
-            </label>
-
-            {/* Maker */}
-            <label className="flex flex-col gap-2">
-              <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
-                Maker
-              </span>
-              <select
-                value={makerId}
-                onChange={(e) => setMakerId(e.target.value)}
-                className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink focus:outline-none focus:ring-2 focus:ring-gold"
-              >
-                <option value="">None</option>
-                {makers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
             </label>
           </div>
 

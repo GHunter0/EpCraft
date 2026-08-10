@@ -19,7 +19,6 @@ export default function EditProductPage() {
 
   const [product, setProduct] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [makers, setMakers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,10 +30,9 @@ export default function EditProductPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [prodRes, catRes, makerRes] = await Promise.all([
+        const [prodRes, catRes] = await Promise.all([
           supabase.from("products").select("*").eq("id", id).single(),
           supabase.from("categories").select("id, name").order("name"),
-          supabase.from("makers").select("id, name").order("name"),
         ]);
 
         if (prodRes.error || !prodRes.data) {
@@ -45,7 +43,6 @@ export default function EditProductPage() {
 
         setProduct(prodRes.data);
         setCategories(catRes.data || []);
-        setMakers(makerRes.data || []);
       } catch (err) {
         setError("Failed to load product.");
         console.error(err);
@@ -101,7 +98,6 @@ export default function EditProductPage() {
       <AdminProductForm
         initialData={product}
         categories={categories}
-        makers={makers}
         onSubmit={handleUpdate}
         submitLabel="Update Product"
       />

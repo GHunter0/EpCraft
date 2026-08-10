@@ -102,7 +102,7 @@ function RegisterForm() {
   };
 
   return (
-    <div className="grid min-h-[720px] grid-cols-1 md:grid-cols-2">
+    <div className="grid min-h-[820px] grid-cols-1 md:grid-cols-2">
       <div className="flex items-center justify-center bg-cream px-8 py-16">
         <div className="flex w-full max-w-md flex-col gap-10">
           <div>
@@ -245,15 +245,12 @@ function RegisterForm() {
         </div>
       </div>
 
-      <div className="relative hidden flex-col justify-end overflow-hidden bg-gradient-to-br from-espresso to-ink p-16 md:flex">
-        <div className="absolute inset-0 bg-black/20" />
-        <p className="relative pb-6 font-serif text-2xl text-white">EpCraft</p>
-        <blockquote className="relative font-serif text-3xl italic leading-snug text-white">
-          &ldquo;Wood is a living material, and every piece tells its own history.&rdquo;
-        </blockquote>
-        <p className="relative pt-6 font-sans text-sm uppercase tracking-widest text-white/80">
-          — Master Artisan
-        </p>
+      <div className="relative hidden flex-col justify-end overflow-hidden p-16 md:flex bg-espresso">
+        <img
+          src="https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/login-img.jpeg"
+          alt="EpCraft Woodworking"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
       </div>
     </div>
   );

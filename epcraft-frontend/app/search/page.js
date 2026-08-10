@@ -30,7 +30,7 @@ function SearchResultsContent() {
       const { data, error } = await supabase
         .from("products")
         .select(`
-          id, name, price, in_stock, image_url, wood_type, material, maker:makers!products_maker_id_fkey(name)
+          id, name, price, in_stock, image_url, wood_type, material
         `)
         .or(`name.ilike.${cleanQ},description.ilike.${cleanQ},material.ilike.${cleanQ},wood_type.ilike.${cleanQ}`)
         .order("created_at", { ascending: false });
@@ -39,10 +39,9 @@ function SearchResultsContent() {
         console.error("Search query execution failed:", error);
       }
 
-      // Map maker name for ProductCard
       const mapped = (data || []).map((p) => ({
         ...p,
-        maker: p.maker?.name || "EpCraft Artisan",
+        maker: "EpCraft Master Artisan",
       }));
 
       setResults(mapped);

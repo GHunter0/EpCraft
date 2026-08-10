@@ -14,7 +14,7 @@ import AdminOrderChart from "@/components/AdminOrderChart";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // -- Build date boundaries for "today" and "last 7 days" queries --
   const now = new Date();

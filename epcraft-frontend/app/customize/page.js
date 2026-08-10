@@ -6,9 +6,21 @@ import { ArrowLeft, Sparkles, ChevronDown, Check, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const finishes = [
-  { name: "Dark Walnut", color: "#4a3222" },
-  { name: "Light Oak", color: "#d8b98a" },
-  { name: "Cherry", color: "#8b3a2b" },
+  {
+    name: "Dark Walnut",
+    color: "#4a3222",
+    image: "https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/dark%20walnut.jpg",
+  },
+  {
+    name: "Light Oak",
+    color: "#d8b98a",
+    image: "https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/light%20oak.jpg",
+  },
+  {
+    name: "Cherry",
+    color: "#8b3a2b",
+    image: "https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/cherry.jpg",
+  },
 ];
 
 const fonts = [
@@ -35,14 +47,15 @@ export default function CustomizationStudioPage() {
   const [success, setSuccess] = useState(false);
 
   const fontClass = fonts.find((f) => f.name === font)?.className ?? "font-serif";
+  const selectedFinishObj = finishes.find((f) => f.name === finish) || finishes[0];
 
   const priceMap = {
-    'Standard (12"x18")': 145,
-    'Large (16"x24")': 195,
-    'Compact (8"x12")': 115,
+    'Standard (12"x18")': 2500,
+    'Large (16"x24")': 3500,
+    'Compact (8"x12")': 1800,
   };
 
-  const totalPrice = priceMap[dimension] || 145;
+  const totalPrice = priceMap[dimension] || 2500;
 
   const handleRequestQuote = async () => {
     setLoading(true);
@@ -96,9 +109,15 @@ export default function CustomizationStudioPage() {
             <ArrowLeft size={16} />
             Back to Catalog
           </Link>
-          <div className="relative flex aspect-[4/3] w-full max-w-2xl items-center justify-center overflow-hidden rounded-2xl bg-sand shadow-card p-8 text-center transition-all">
+          <div
+            className="relative flex aspect-[4/3] w-full max-w-2xl items-center justify-center overflow-hidden rounded-2xl bg-sand shadow-card p-8 text-center transition-all bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${selectedFinishObj.image})`,
+            }}
+          >
+            <div className="absolute inset-0 bg-black/25" />
             <span
-              className={`select-none text-4xl md:text-6xl tracking-widest text-espresso opacity-75 mix-blend-multiply ${fontClass}`}
+              className={`relative z-10 select-none text-4xl md:text-6xl tracking-widest text-white drop-shadow-lg ${fontClass}`}
             >
               {engraving || "Your Custom Engraving"}
             </span>
@@ -158,8 +177,9 @@ export default function CustomizationStudioPage() {
                       className="flex flex-col items-center gap-2"
                     >
                       <span
-                        className="h-14 w-14 rounded-pill shadow-sm transition-transform hover:scale-105"
+                        className="h-14 w-14 rounded-pill shadow-sm transition-transform hover:scale-105 bg-cover bg-center overflow-hidden border border-white"
                         style={{
+                          backgroundImage: `url(${f.image})`,
                           backgroundColor: f.color,
                           boxShadow: finish === f.name ? "0 0 0 2px white, 0 0 0 4px #502c12" : "none",
                         }}
@@ -186,9 +206,9 @@ export default function CustomizationStudioPage() {
                     onChange={(e) => setDimension(e.target.value)}
                     className="w-full appearance-none rounded-xl border border-border/60 bg-cream/30 px-5 py-3.5 font-sans text-sm text-ink focus:outline-none focus:ring-2 focus:ring-gold"
                   >
-                    <option>{'Standard (12"x18") - $145'}</option>
-                    <option>{'Large (16"x24") - $195'}</option>
-                    <option>{'Compact (8"x12") - $115'}</option>
+                    <option value='Standard (12"x18")'>{'Standard (12"x18") - 2,500 LKR'}</option>
+                    <option value='Large (16"x24")'>{'Large (16"x24") - 3,500 LKR'}</option>
+                    <option value='Compact (8"x12")'>{'Compact (8"x12") - 1,800 LKR'}</option>
                   </select>
                   <ChevronDown size={16} className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-bark" />
                 </div>
@@ -248,7 +268,7 @@ export default function CustomizationStudioPage() {
       {!success && (
         <div className="sticky bottom-0 z-40 flex items-center justify-between border-t border-border/60 bg-white px-8 py-4 shadow-card lg:px-16">
           <p className="font-sans text-base text-bark">
-            Estimated Value: <span className="font-serif text-2xl font-bold text-espresso">${totalPrice}.00</span>
+            Estimated Value: <span className="font-serif text-2xl font-bold text-espresso">{totalPrice.toLocaleString()} LKR</span>
           </p>
           <button
             onClick={handleRequestQuote}

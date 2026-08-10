@@ -4,7 +4,7 @@ import crypto from 'crypto'
 
 export async function POST(request) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // 1. Retrieve authenticated user session
     const {

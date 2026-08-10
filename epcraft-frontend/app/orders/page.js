@@ -1,14 +1,19 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import AccountSidebar from "@/components/AccountSidebar";
 import OrderTracker from "@/components/OrderTracker";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 
 export default async function OrdersPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?returnTo=/orders");
+  }
 
   // Load orders history along with item details
   const { data: orders, error } = await supabase
@@ -117,15 +122,26 @@ export default async function OrdersPage() {
                   </div>
 
                   <div className="flex gap-4 overflow-x-auto pb-2">
-                    {activeOrder.order_items?.map((item) => (
-                      <div
-                        key={item.id}
-                        title={item.product?.name}
-                        className="h-20 w-20 shrink-0 rounded-lg bg-sand border border-border/30 flex items-center justify-center font-serif text-[8px] text-bark p-1 text-center"
-                      >
-                        {item.product?.name || "Bespoke Piece"}
-                      </div>
-                    ))}
+                    {activeOrder.order_items?.map((item) => {
+                      const imgUrl = getProductImageUrl(item.product?.image_url);
+                      return (
+                        <div
+                          key={item.id}
+                          title={item.product?.name}
+                          className="h-20 w-20 shrink-0 rounded-lg bg-sand border border-border/30 flex items-center justify-center font-serif text-[8px] text-bark p-1 text-center overflow-hidden relative"
+                        >
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt={item.product?.name || "Bespoke Piece"}
+                              className="h-full w-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            item.product?.name || "Bespoke Piece"
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <OrderTracker currentStep={getTrackerStep(activeOrder.status)} />
@@ -149,37 +165,48 @@ export default async function OrdersPage() {
               <div className="flex flex-col gap-4">
                 <h3 className="font-serif text-xl font-semibold text-espresso">Past Orders</h3>
                 <div className="flex flex-col gap-4">
-                  {pastOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between rounded-xl border border-border/10 bg-white p-6 shadow-soft"
-                    >
-                      <div className="flex items-center gap-6">
-                        <div className="h-16 w-16 shrink-0 rounded-lg bg-sand flex items-center justify-center font-serif text-[8px] text-bark p-1 text-center">
-                          {order.order_items?.[0]?.product?.name || "Bespoke Piece"}
+                  {pastOrders.map((order) => {
+                    const pastImgUrl = getProductImageUrl(order.order_items?.[0]?.product?.image_url);
+                    return (
+                      <div
+                        key={order.id}
+                        className="flex items-center justify-between rounded-xl border border-border/10 bg-white p-6 shadow-soft"
+                      >
+                        <div className="flex items-center gap-6">
+                          <div className="h-16 w-16 shrink-0 rounded-lg bg-sand flex items-center justify-center font-serif text-[8px] text-bark p-1 text-center overflow-hidden relative border border-border/30">
+                            {pastImgUrl ? (
+                              <img
+                                src={pastImgUrl}
+                                alt={order.order_items?.[0]?.product?.name || "Bespoke Piece"}
+                                className="h-full w-full object-cover rounded-lg"
+                              />
+                            ) : (
+                              order.order_items?.[0]?.product?.name || "Bespoke Piece"
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-serif text-base font-semibold text-espresso">
+                              Order #{order.id.slice(0, 8).toUpperCase()}
+                            </h3>
+                            <p className="font-sans text-sm text-bark">
+                              {new Date(order.created_at).toLocaleDateString()} • {getStatusLabel(order)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-serif text-base font-semibold text-espresso">
-                            Order #{order.id.slice(0, 8).toUpperCase()}
-                          </h3>
-                          <p className="font-sans text-sm text-bark">
-                            {new Date(order.created_at).toLocaleDateString()} • {getStatusLabel(order)}
-                          </p>
+                        <div className="flex items-center gap-4">
+                          <span className="font-sans text-sm text-bark">
+                            {order.order_items?.reduce((sum, item) => sum + item.quantity, 0)} Items
+                          </span>
+                          <Link
+                            href={`/order-confirmation?order_id=${order.id}`}
+                            className="rounded-pill px-6 py-2 font-sans text-sm font-semibold text-espresso hover:bg-cream border border-border/40 transition-colors"
+                          >
+                            Details
+                          </Link>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-sans text-sm text-bark">
-                          {order.order_items?.reduce((sum, item) => sum + item.quantity, 0)} Items
-                        </span>
-                        <Link
-                          href={`/order-confirmation?order_id=${order.id}`}
-                          className="rounded-pill px-6 py-2 font-sans text-sm font-semibold text-espresso hover:bg-cream border border-border/40 transition-colors"
-                        >
-                          Details
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

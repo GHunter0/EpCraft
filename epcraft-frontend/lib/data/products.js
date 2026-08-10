@@ -15,9 +15,6 @@ export async function getProducts({ category, wood, inStockOnly, sort, searchQue
     .from('products')
     .select(`
       *,
-      maker:makers (
-        name
-      ),
       category:categories (
         name
       )
@@ -57,7 +54,7 @@ export async function getProducts({ category, wood, inStockOnly, sort, searchQue
 
   return (data || []).map(p => ({
     ...p,
-    maker: p.maker?.name || 'Artisan',
+    maker: 'EpCraft Master Artisan',
     category: p.category?.name || 'Woodcraft',
     woodType: p.wood_type,
     inStock: p.in_stock,
@@ -75,7 +72,6 @@ export async function getProductById(id) {
     .from('products')
     .select(`
       *,
-      maker:makers (*),
       category:categories (*)
     `)
     .eq('id', id)
@@ -90,8 +86,7 @@ export async function getProductById(id) {
 
   return {
     ...data,
-    maker: data.maker?.name || 'Artisan',
-    maker_details: data.maker,
+    maker: 'EpCraft Master Artisan',
     category: data.category?.name || 'Woodcraft',
     woodType: data.wood_type,
     inStock: data.in_stock,

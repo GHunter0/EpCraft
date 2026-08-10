@@ -14,7 +14,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const product = await getProductById(params.id);
+  const resolvedParams = await params;
+  const product = await getProductById(resolvedParams.id);
   if (!product) return {};
   return {
     title: `${product.name} — Handcrafted by EpCraft`,
@@ -23,7 +24,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductDetailPage({ params }) {
-  const product = await getProductById(params.id);
+  const resolvedParams = await params;
+  const product = await getProductById(resolvedParams.id);
   if (!product) return notFound();
 
   const allProducts = await getProducts();

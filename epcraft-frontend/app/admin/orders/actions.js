@@ -11,7 +11,7 @@ const ALLOWED_TRANSITIONS = {
 };
 
 export async function updateOrderStatus(orderId, newStatus) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Re-verify admin server-side on every mutation
   const {

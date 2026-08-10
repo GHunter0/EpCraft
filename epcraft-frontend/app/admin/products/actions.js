@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
  * Returns { user, error }.
  */
 async function requireAdmin() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -108,7 +108,6 @@ export async function createProduct(formData) {
     name: formData.get("name"),
     price: formData.get("price"),
     category_id: formData.get("category_id"),
-    maker_id: formData.get("maker_id") || null,
     material: formData.get("material") || null,
     wood_type: formData.get("wood_type") || null,
     description: formData.get("description") || null,
@@ -139,7 +138,6 @@ export async function createProduct(formData) {
     name: fields.name.trim(),
     price: parseFloat(fields.price),
     category_id: fields.category_id.trim(),
-    maker_id: fields.maker_id?.trim() || null,
     material: fields.material?.trim() || null,
     wood_type: fields.wood_type?.trim() || null,
     description: fields.description?.trim() || null,
@@ -172,7 +170,6 @@ export async function updateProduct(productId, formData) {
     name: formData.get("name"),
     price: formData.get("price"),
     category_id: formData.get("category_id"),
-    maker_id: formData.get("maker_id") || null,
     material: formData.get("material") || null,
     wood_type: formData.get("wood_type") || null,
     description: formData.get("description") || null,
@@ -193,7 +190,6 @@ export async function updateProduct(productId, formData) {
       name: fields.name.trim(),
       price: parseFloat(fields.price),
       category_id: fields.category_id.trim(),
-      maker_id: fields.maker_id?.trim() || null,
       material: fields.material?.trim() || null,
       wood_type: fields.wood_type?.trim() || null,
       description: fields.description?.trim() || null,
