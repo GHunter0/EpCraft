@@ -116,6 +116,7 @@ export async function createProduct(formData) {
     stock: formData.get("stock"),
     allow_backorder: formData.get("allow_backorder") === "true",
     is_wholesale: formData.get("is_wholesale") === "true",
+    allow_cod: formData.get("allow_cod") === "true",
   };
 
   const { valid, errors } = validateProductFields(fields);
@@ -147,6 +148,7 @@ export async function createProduct(formData) {
     stock: parseInt(fields.stock),
     allow_backorder: fields.allow_backorder,
     is_wholesale: fields.is_wholesale,
+    allow_cod: fields.allow_cod,
   });
 
   if (insertErr) {
@@ -181,6 +183,7 @@ export async function updateProduct(productId, formData) {
     stock: formData.get("stock"),
     allow_backorder: formData.get("allow_backorder") === "true",
     is_wholesale: formData.get("is_wholesale") === "true",
+    allow_cod: formData.get("allow_cod") === "true",
   };
 
   const { valid, errors } = validateProductFields(fields);
@@ -202,6 +205,7 @@ export async function updateProduct(productId, formData) {
       stock: parseInt(fields.stock),
       allow_backorder: fields.allow_backorder,
       is_wholesale: fields.is_wholesale,
+      allow_cod: fields.allow_cod,
     })
     .eq("id", productId);
 

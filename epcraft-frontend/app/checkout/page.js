@@ -17,7 +17,36 @@ function CheckoutContent() {
 
   const selectedParam = searchParams.get("selected");
   const selectedItemIds = selectedParam ? selectedParam.split(",") : null;
-  const checkoutCart = selectedItemIds
+  const customRequestId = searchParams.get("custom_request_id");
+
+  const [customRequest, setCustomRequest] = useState(null);
+  const [customRequestLoading, setCustomRequestLoading] = useState(false);
+
+  const checkoutCart = customRequestId
+    ? customRequest
+      ? [
+          {
+            cartItemId: `custom-${customRequest.id}`,
+            id: customRequest.base_product_id || "oak-serving-board",
+            name: `Custom ${customRequest.finish || "Bespoke"} Wood Piece`,
+            price: Number(customRequest.quoted_price || 0),
+            image: customRequest.base_product?.image_url || "",
+            category: "",
+            woodType: "",
+            allow_cod: customRequest.base_product?.allow_cod ?? true,
+            quantity: 1,
+            customOptions: {
+              finish: customRequest.finish,
+              dimension: customRequest.dimension,
+              engraving_text: customRequest.engraving_text,
+              font: customRequest.font,
+              is_custom_studio_request: true,
+              custom_request_id: customRequest.id,
+            },
+          },
+        ]
+      : []
+    : selectedItemIds
     ? cart.filter((item) => selectedItemIds.includes(String(item.cartItemId)))
     : cart;
 
@@ -87,6 +116,9 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const canUseCOD = checkoutCart.every((item) => item.allow_cod !== false);
+  const selectedPayment = payment === "cod" && !canUseCOD ? "card" : payment;
+
   const supabase = createClient();
   const checkoutError = searchParams.get("error");
   const cancelledOrderId = searchParams.get("order_id");
@@ -144,8 +176,31 @@ function CheckoutContent() {
         });
       }
     }
+    async function loadCustomRequest() {
+      if (!customRequestId) return;
+      setCustomRequestLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("custom_order_requests")
+          .select(`
+            *,
+            base_product:products!custom_order_requests_base_product_id_fkey ( id, name, price, image_url, allow_cod )
+          `)
+          .eq("id", customRequestId)
+          .single();
+
+        if (!error && data) {
+          setCustomRequest(data);
+        }
+      } catch (err) {
+        console.error("Failed to load custom request:", err);
+      } finally {
+        setCustomRequestLoading(false);
+      }
+    }
     loadUserProfile();
     loadStoreSettings();
+    loadCustomRequest();
 
     if (checkoutError === "cancelled") {
       if (cancelledOrderId) {
@@ -154,7 +209,7 @@ function CheckoutContent() {
         });
       }
     }
-  }, [checkoutError, cancelledOrderId]);
+  }, [checkoutError, cancelledOrderId, customRequestId]);
 
   const shipping = delivery === "express" ? settings.express_shipping : settings.standard_shipping;
   const tax = Math.round(checkoutSubtotal * (settings.tax_percentage / 100) * 100) / 100;
@@ -179,6 +234,8 @@ function CheckoutContent() {
         body: JSON.stringify({
           shippingAddress: { name, address, city, zip, phone },
           deliveryMethod: delivery,
+          paymentMethod: selectedPayment,
+          customRequestId: customRequestId || null,
           cartItems: checkoutCart.map((item) => ({
             id: item.id,
             quantity: item.quantity,
@@ -195,15 +252,21 @@ function CheckoutContent() {
         return;
       }
 
-      // 2. Redirect user to PayHere sandbox payment page
-      const payhereParams = resData.payhereParams;
-
       // Clear the checked out items from cart
       try {
-        await Promise.all(checkoutCart.map((item) => removeFromCart(item.cartItemId)));
+        if (!customRequestId) {
+          await Promise.all(checkoutCart.map((item) => removeFromCart(item.cartItemId)));
+        }
       } catch (clearErr) {
         console.error("Failed to clear purchased items from cart:", clearErr);
       }
+
+      if (selectedPayment === "cod") {
+        router.push(`/order-confirmation?order_id=${resData.orderId}`);
+        return;
+      }
+
+      const payhereParams = resData.payhereParams;
 
       const form = document.createElement("form");
       form.method = "POST";
@@ -400,29 +463,30 @@ function CheckoutContent() {
 
           {/* Payment Method */}
           <section className="flex flex-col gap-6 rounded-2xl bg-white p-8 shadow-card border border-border/40">
-            <h2 className="font-serif text-2xl font-bold text-espresso">Payment Method</h2>
-            <div className="flex gap-8 border-b border-border/40">
-              {[
-                { id: "card", label: "Credit / Debit Card (PayHere Sandbox)" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setPayment(tab.id)}
-                  className={`pb-4 font-sans text-sm font-semibold transition-colors ${
-                    payment === tab.id
-                      ? "border-b-2 border-espresso text-espresso"
-                      : "text-bark hover:text-espresso"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="flex flex-col gap-2">
+              <h2 className="font-serif text-2xl font-bold text-espresso">Payment Method</h2>
+              {!canUseCOD && (
+                <span className="font-sans text-[11px] text-bark italic">
+                  * Cash on Delivery is disabled because one or more products in your cart require card payment.
+                </span>
+              )}
             </div>
-
-            <p className="font-sans text-sm text-bark">
-              You will be redirected to the secure PayHere Sandbox portal to safely complete your payment.
-            </p>
+            <div className="flex flex-col gap-4">
+              <PaymentOption
+                selected={selectedPayment === "card"}
+                onSelect={() => setPayment("card")}
+                title="Credit / Debit Card (PayHere Sandbox)"
+                detail="You will be redirected to the secure PayHere Sandbox portal to safely complete your payment."
+              />
+              {canUseCOD && (
+                <PaymentOption
+                  selected={selectedPayment === "cod"}
+                  onSelect={() => setPayment("cod")}
+                  title="Cash on Delivery (COD)"
+                  detail="Pay with cash upon delivery of your handcrafted item. Simple and secure."
+                />
+              )}
+            </div>
           </section>
         </div>
 
@@ -549,6 +613,27 @@ function DeliveryOption({ selected, onSelect, title, price, detail }) {
           <span className="font-sans text-sm font-bold text-espresso">{title}</span>
           <span className="font-sans text-sm font-bold text-espresso">{price}</span>
         </div>
+        <p className="font-sans text-xs text-bark mt-1">{detail}</p>
+      </div>
+    </label>
+  );
+}
+
+function PaymentOption({ selected, onSelect, title, detail }) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center gap-6 rounded-xl border p-5 transition-all ${
+        selected ? "border-2 border-espresso bg-white shadow-sm" : "border-border/40 bg-cream/40"
+      }`}
+    >
+      <input
+        type="radio"
+        checked={selected}
+        onChange={onSelect}
+        className="h-5 w-5 accent-espresso"
+      />
+      <div className="flex-1">
+        <span className="font-sans text-sm font-bold text-espresso">{title}</span>
         <p className="font-sans text-xs text-bark mt-1">{detail}</p>
       </div>
     </label>

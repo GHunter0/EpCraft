@@ -78,7 +78,8 @@ export function ShopProvider({ children }) {
               price,
               image_url,
               category_id,
-              wood_type
+              wood_type,
+              allow_cod
             )
           `)
           .eq("user_id", currentUser.id);
@@ -93,6 +94,7 @@ export function ShopProvider({ children }) {
           image: item.product?.image_url || "",
           category: item.product?.category_id || "",
           woodType: item.product?.wood_type || "",
+          allow_cod: item.product?.allow_cod ?? true,
           quantity: item.quantity,
           customOptions: item.custom_options,
         }));
@@ -257,6 +259,7 @@ export function ShopProvider({ children }) {
             image: product.image_url || product.image || "",
             category: product.category || "",
             woodType: product.woodType || "",
+            allow_cod: product.allow_cod ?? true,
             quantity,
             customOptions,
           },

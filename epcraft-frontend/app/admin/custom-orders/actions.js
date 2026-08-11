@@ -71,3 +71,61 @@ export async function submitQuote(requestId, formData) {
 
   return { success: true };
 }
+
+export async function declineRequest(requestId, reason) {
+  const supabase = await createClient();
+
+  // Re-verify admin on every mutation
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_admin) return { error: "Forbidden" };
+
+  const trimmedReason = (reason || "").trim();
+  if (!trimmedReason) {
+    return { error: "Rejection reason is required." };
+  }
+
+  // Confirm request exists and is still pending_review
+  const { data: req, error: fetchErr } = await supabase
+    .from("custom_order_requests")
+    .select("id, status")
+    .eq("id", requestId)
+    .single();
+
+  if (fetchErr || !req) return { error: "Custom order request not found." };
+
+  if (req.status !== "pending_review") {
+    return {
+      error: `Request is already '${req.status}' — cannot decline.`,
+    };
+  }
+
+  const { error: updateErr } = await supabase
+    .from("custom_order_requests")
+    .update({
+      status: "declined",
+      rejection_reason: trimmedReason,
+      updated_by: user.id,
+    })
+    .eq("id", requestId);
+
+  if (updateErr) {
+    console.error("Quote decline failed:", updateErr);
+    return { error: updateErr.message };
+  }
+
+  revalidatePath(`/admin/custom-orders/${requestId}`);
+  revalidatePath("/admin/custom-orders");
+
+  return { success: true };
+}

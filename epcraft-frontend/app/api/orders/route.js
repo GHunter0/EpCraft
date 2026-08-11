@@ -37,48 +37,82 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { shippingAddress, deliveryMethod, cartItems } = body
+    const { shippingAddress, deliveryMethod, cartItems, paymentMethod = "card", customRequestId = null } = body
 
     if (!cartItems || cartItems.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 })
     }
 
-    // Fetch product details from DB to calculate subtotal server-side (do not trust client price)
-    const productIds = cartItems.map((item) => item.id)
-    const { data: dbProducts, error: dbErr } = await supabase
-      .from("products")
-      .select("id, name, price, stock, allow_backorder")
-      .in("id", productIds)
-
-    if (dbErr || !dbProducts) {
-      return NextResponse.json({ error: "Failed to verify products" }, { status: 500 })
-    }
-
     let subtotal = 0
     const orderItemsToInsert = []
 
-    for (const cartItem of cartItems) {
-      const dbProduct = dbProducts.find((p) => p.id === cartItem.id)
-      if (!dbProduct) {
-        return NextResponse.json({ error: `Product not found: ${cartItem.id}` }, { status: 400 })
+    if (customRequestId) {
+      const { data: customReq, error: customReqErr } = await supabase
+        .from("custom_order_requests")
+        .select("quoted_price, base_product_id, finish, dimension, engraving_text, font, status")
+        .eq("id", customRequestId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (customReqErr || !customReq) {
+        return NextResponse.json({ error: "Custom order request not found" }, { status: 404 })
       }
 
-      // Check stock availability
-      if (!dbProduct.allow_backorder && Number(dbProduct.stock) < cartItem.quantity) {
-        return NextResponse.json({ 
-          error: `Insufficient stock for product "${dbProduct.name}". Only ${dbProduct.stock} unit(s) left.` 
-        }, { status: 400 })
+      if (customReq.status !== "quoted") {
+        return NextResponse.json({ error: "Custom request is not in a payable quoted state" }, { status: 400 })
       }
-      
-      const itemPrice = Number(dbProduct.price)
-      subtotal += itemPrice * cartItem.quantity
-      
+
+      const itemPrice = Number(customReq.quoted_price)
+      subtotal = itemPrice
+
       orderItemsToInsert.push({
-        product_id: cartItem.id,
-        quantity: cartItem.quantity,
+        product_id: customReq.base_product_id || "oak-serving-board",
+        quantity: 1,
         price_at_purchase: itemPrice,
-        custom_options: cartItem.customOptions || null,
+        custom_options: {
+          finish: customReq.finish,
+          dimension: customReq.dimension,
+          engraving_text: customReq.engraving_text,
+          font: customReq.font,
+          is_custom_studio_request: true,
+          custom_request_id: customRequestId,
+        },
       })
+    } else {
+      // Fetch product details from DB to calculate subtotal server-side (do not trust client price)
+      const productIds = cartItems.map((item) => item.id)
+      const { data: dbProducts, error: dbErr } = await supabase
+        .from("products")
+        .select("id, name, price, stock, allow_backorder")
+        .in("id", productIds)
+
+      if (dbErr || !dbProducts) {
+        return NextResponse.json({ error: "Failed to verify products" }, { status: 500 })
+      }
+
+      for (const cartItem of cartItems) {
+        const dbProduct = dbProducts.find((p) => p.id === cartItem.id)
+        if (!dbProduct) {
+          return NextResponse.json({ error: `Product not found: ${cartItem.id}` }, { status: 400 })
+        }
+
+        // Check stock availability
+        if (!dbProduct.allow_backorder && Number(dbProduct.stock) < cartItem.quantity) {
+          return NextResponse.json({ 
+            error: `Insufficient stock for product "${dbProduct.name}". Only ${dbProduct.stock} unit(s) left.` 
+          }, { status: 400 })
+        }
+        
+        const itemPrice = Number(dbProduct.price)
+        subtotal += itemPrice * cartItem.quantity
+        
+        orderItemsToInsert.push({
+          product_id: cartItem.id,
+          quantity: cartItem.quantity,
+          price_at_purchase: itemPrice,
+          custom_options: cartItem.customOptions || null,
+        })
+      }
     }
 
     // Fetch store settings for shipping & tax rates
@@ -98,12 +132,14 @@ export async function POST(request) {
     const total = subtotal + shipping + tax
 
     // Create the order row
+    const isCOD = paymentMethod === "cod"
     const { data: order, error: orderErr } = await supabase
       .from("orders")
       .insert({
         user_id: user.id,
-        status: "pending_payment",
+        status: isCOD ? "processing" : "pending_payment",
         payment_status: "unpaid",
+        payhere_order_id: isCOD ? "COD" : null,
         delivery_method: deliveryMethod,
         subtotal,
         tax,
@@ -131,6 +167,20 @@ export async function POST(request) {
       // Delete parent order on failure to clean up
       await supabase.from("orders").delete().eq("id", order.id)
       return NextResponse.json({ error: "Failed to process order items" }, { status: 500 })
+    }
+
+    if (customRequestId) {
+      const { error: updateReqErr } = await supabase
+        .from("custom_order_requests")
+        .update({ status: "accepted" })
+        .eq("id", customRequestId)
+      if (updateReqErr) {
+        console.error("Failed to transition custom request to accepted status:", updateReqErr)
+      }
+    }
+
+    if (isCOD) {
+      return NextResponse.json({ success: true, orderId: order.id })
     }
 
     // PayHere parameters generation
