@@ -10,7 +10,7 @@ const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey)
 /**
  * Fetch products from Supabase with optional filters.
  */
-export async function getProducts({ category, wood, inStockOnly, sort, searchQuery } = {}) {
+export async function getProducts({ category, wood, inStockOnly, sort, searchQuery, isWholesaleOnly = false } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -19,6 +19,7 @@ export async function getProducts({ category, wood, inStockOnly, sort, searchQue
         name
       )
     `)
+    .eq('is_wholesale', isWholesaleOnly)
 
   if (category) {
     const catId = category.toLowerCase().trim().replace(/\s+/g, '-');

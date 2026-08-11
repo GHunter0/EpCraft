@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Heart, ShoppingBag, Menu, X, User, Bot, ChevronDown, Package, LogIn, ShieldAlert } from "lucide-react";
 import { useShop } from "@/lib/ShopContext";
 import { createClient } from "@/lib/supabase/client";
+import { getCategories } from "@/lib/data/categories";
+import { getProductImageUrl } from "@/lib/products";
 
 const links = [
   { href: "/shop", label: "Shop" },
   { href: "/customize", label: "Custom Orders" },
+  { href: "/wholesale", label: "Wholesale" },
   { href: "/story", label: "Our Story" },
   { href: "/ai-stylist", label: "AI Stylist" },
 ];
@@ -21,6 +24,28 @@ export default function Navbar({ onOpenChat }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+
+  // Hover and Categories dropdown states
+  const [isShopHovered, setIsShopHovered] = useState(false);
+  const [navCategories, setNavCategories] = useState([]);
+  const hoverTimeoutRef = useRef(null);
+
+  const handleMouseEnterShop = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setIsShopHovered(true);
+  };
+
+  const handleMouseLeaveShop = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsShopHovered(false);
+    }, 250);
+  };
 
   const pathname = usePathname();
   const router = useRouter();
@@ -50,6 +75,13 @@ export default function Navbar({ onOpenChat }) {
 
     loadUser();
 
+    // Fetch navigation categories on mount
+    async function fetchNavCategories() {
+      const data = await getCategories();
+      setNavCategories(data || []);
+    }
+    fetchNavCategories();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         const currentUser = session?.user ?? null;
@@ -71,6 +103,9 @@ export default function Navbar({ onOpenChat }) {
 
     return () => {
       authListener?.subscription?.unsubscribe();
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -99,6 +134,64 @@ export default function Navbar({ onOpenChat }) {
           <nav className="hidden items-center gap-10 md:flex">
             {links.map((link) => {
               const isActive = pathname === link.href;
+              
+              if (link.label === "Shop") {
+                return (
+                  <div
+                    key={link.href}
+                    className=""
+                    onMouseEnter={handleMouseEnterShop}
+                    onMouseLeave={handleMouseLeaveShop}
+                  >
+                    <Link
+                      href={link.href}
+                      className={`flex items-center gap-1 font-sans text-base transition-colors hover:text-espresso pb-4 -mb-4 ${
+                        isActive || pathname.startsWith("/shop")
+                          ? "border-b-2 border-walnut font-medium text-espresso"
+                          : "text-bark"
+                      }`}
+                    >
+                      {link.label}
+                      <ChevronDown size={14} className={`opacity-70 transition-transform duration-200 ${isShopHovered ? "rotate-180" : ""}`} />
+                    </Link>
+
+                    {/* Full-width transparent category popdown matching header background */}
+                    {isShopHovered && (
+                      <div
+                        onMouseEnter={handleMouseEnterShop}
+                        onMouseLeave={handleMouseLeaveShop}
+                        className="absolute left-0 top-[72px] w-full border-b border-border/60 bg-cream/75 backdrop-blur-lg py-10 animate-in fade-in slide-in-from-top-1 duration-200 z-40 hidden md:block"
+                      >
+                        <div className="container-page flex flex-row items-center justify-center gap-12">
+                          {navCategories.map((cat) => (
+                            <Link
+                              key={cat.id}
+                              href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                              onClick={() => setIsShopHovered(false)}
+                              className="flex flex-col items-center gap-4 group shrink-0 w-44 text-center"
+                            >
+                              <div className="h-40 w-40 overflow-hidden rounded-pill bg-sand shadow-card flex items-center justify-center font-serif text-lg text-bark relative transition-transform duration-300 group-hover:scale-105">
+                                <img
+                                  src={getProductImageUrl(cat.image_url || cat.image)}
+                                  alt={cat.name}
+                                  className="h-full w-full object-cover"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                              <h3 className="font-sans text-base font-semibold text-espresso group-hover:text-gold transition-colors">
+                                {cat.name}
+                              </h3>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={link.href}

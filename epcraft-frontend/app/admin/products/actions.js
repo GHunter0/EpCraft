@@ -115,6 +115,7 @@ export async function createProduct(formData) {
     in_stock: formData.get("in_stock") === "true",
     stock: formData.get("stock"),
     allow_backorder: formData.get("allow_backorder") === "true",
+    is_wholesale: formData.get("is_wholesale") === "true",
   };
 
   const { valid, errors } = validateProductFields(fields);
@@ -145,6 +146,7 @@ export async function createProduct(formData) {
     in_stock: fields.in_stock,
     stock: parseInt(fields.stock),
     allow_backorder: fields.allow_backorder,
+    is_wholesale: fields.is_wholesale,
   });
 
   if (insertErr) {
@@ -154,6 +156,7 @@ export async function createProduct(formData) {
 
   revalidatePath("/admin/products");
   revalidatePath("/shop");
+  revalidatePath("/wholesale");
 
   return { success: true, productId: fields.id.trim() };
 }
@@ -177,6 +180,7 @@ export async function updateProduct(productId, formData) {
     in_stock: formData.get("in_stock") === "true",
     stock: formData.get("stock"),
     allow_backorder: formData.get("allow_backorder") === "true",
+    is_wholesale: formData.get("is_wholesale") === "true",
   };
 
   const { valid, errors } = validateProductFields(fields);
@@ -197,6 +201,7 @@ export async function updateProduct(productId, formData) {
       in_stock: fields.in_stock,
       stock: parseInt(fields.stock),
       allow_backorder: fields.allow_backorder,
+      is_wholesale: fields.is_wholesale,
     })
     .eq("id", productId);
 
@@ -209,6 +214,7 @@ export async function updateProduct(productId, formData) {
   revalidatePath(`/admin/products/${productId}`);
   revalidatePath(`/product/${productId}`);
   revalidatePath("/shop");
+  revalidatePath("/wholesale");
 
   return { success: true };
 }
