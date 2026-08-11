@@ -48,6 +48,7 @@ export default function AdminProductForm({
   const [stock, setStock] = useState(initialData?.stock?.toString() || "10");
   const [allowBackorder, setAllowBackorder] = useState(initialData?.allow_backorder ?? false);
   const [isWholesale, setIsWholesale] = useState(initialData?.is_wholesale ?? false);
+  const [allowCod, setAllowCod] = useState(initialData?.allow_cod ?? true);
 
   // Image upload state
   const [uploading, setUploading] = useState(false);
@@ -147,6 +148,7 @@ export default function AdminProductForm({
     fd.set("stock", stock);
     fd.set("allow_backorder", String(allowBackorder));
     fd.set("is_wholesale", String(isWholesale));
+    fd.set("allow_cod", String(allowCod));
 
     try {
       const result = await onSubmit(fd);
@@ -490,7 +492,7 @@ export default function AdminProductForm({
             </label>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2 border-t border-border/20">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2 border-t border-border/20">
             {/* In Stock toggle */}
             <label className="flex items-center gap-3 cursor-pointer w-fit">
               <input
@@ -523,6 +525,24 @@ export default function AdminProductForm({
                 </span>
                 <span className="font-sans text-[10px] text-bark">
                   Limit to wholesale catalog only
+                </span>
+              </div>
+            </label>
+
+            {/* COD toggle */}
+            <label className="flex items-center gap-3 cursor-pointer w-fit">
+              <input
+                type="checkbox"
+                checked={allowCod}
+                onChange={(e) => setAllowCod(e.target.checked)}
+                className="h-5 w-5 rounded border-border/60 text-gold focus:ring-gold accent-gold"
+              />
+              <div className="flex flex-col">
+                <span className="font-sans text-sm text-espresso font-semibold">
+                  Allow COD
+                </span>
+                <span className="font-sans text-[10px] text-bark">
+                  Enable Cash on Delivery option
                 </span>
               </div>
             </label>

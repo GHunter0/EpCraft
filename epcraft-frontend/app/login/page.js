@@ -77,12 +77,18 @@ function LoginForm() {
 
   return (
     <div className="grid min-h-[820px] grid-cols-1 md:grid-cols-2">
-      <div className="relative hidden items-end overflow-hidden p-16 md:flex bg-espresso">
+      <div className="relative hidden items-center justify-center overflow-hidden p-16 md:flex bg-espresso">
         <img
-          src="https://tqgnhkhcepvtfujvbnte.supabase.co/storage/v1/object/public/product-images/login-img.jpeg"
+          src="https://i.pinimg.com/1200x/64/a0/eb/64a0eb4c26da829f95578d1dbc3a665e.jpg"
           alt="EpCraft Woodworking"
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.5]"
         />
+        <div className="relative z-10 text-center max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <p className="font-serif text-3xl font-light italic leading-relaxed text-cream/95">
+            &quot;Every wood grain tells a story of patient craftsmanship.&quot;
+          </p>
+          <div className="mx-auto mt-6 h-0.5 w-20 bg-gold/60" />
+        </div>
       </div>
 
       <div className="flex items-center justify-center bg-cream px-8 py-16">

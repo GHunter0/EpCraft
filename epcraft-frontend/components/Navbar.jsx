@@ -3,7 +3,22 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Heart, ShoppingBag, Menu, X, User, Bot, ChevronDown, Package, LogIn, ShieldAlert } from "lucide-react";
+import {
+  Menu,
+  X,
+  Search,
+  Heart,
+  ShoppingBag,
+  User,
+  ChevronDown,
+  LogOut,
+  Settings,
+  Bot,
+  Bell,
+  Package,
+  LogIn,
+  ShieldAlert,
+} from "lucide-react";
 import { useShop } from "@/lib/ShopContext";
 import { createClient } from "@/lib/supabase/client";
 import { getCategories } from "@/lib/data/categories";
@@ -25,10 +40,13 @@ export default function Navbar({ onOpenChat }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
 
-  // Hover and Categories dropdown states
   const [isShopHovered, setIsShopHovered] = useState(false);
   const [navCategories, setNavCategories] = useState([]);
   const hoverTimeoutRef = useRef(null);
+
+  // Notification states
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleMouseEnterShop = () => {
     if (hoverTimeoutRef.current) {
@@ -108,6 +126,82 @@ export default function Navbar({ onOpenChat }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      if (!user) {
+        setNotifications((prev) => (prev.length > 0 ? [] : prev));
+        return;
+      }
+
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (data) {
+        setNotifications(data);
+      }
+    }
+
+    fetchNotifications();
+
+    if (!user) return;
+
+    // Subscribe to new notifications in real-time
+    const channel = supabase
+      .channel("realtime-notifications")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          setNotifications((prev) => [payload.new, ...prev].slice(0, 10));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const handleNotificationClick = async (notification) => {
+    setNotificationsOpen(false);
+    
+    // Mark as read in DB
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", notification.id);
+
+    // Update local state
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
+    );
+
+    // Redirect
+    if (notification.link) {
+      router.push(notification.link);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (!user) return;
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+  };
 
   const handleSignOut = async () => {
     setProfileOpen(false);
@@ -241,6 +335,70 @@ export default function Navbar({ onOpenChat }) {
                 </span>
               )}
             </Link>
+
+            {/* Notifications */}
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  aria-label="View notifications"
+                  className="relative text-bark hover:text-espresso transition-colors pt-1.5"
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border border-cream">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Glassmorphic Dropdown */}
+                {notificationsOpen && (
+                  <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-border/40 bg-cream/95 backdrop-blur-md p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between border-b border-border/20 pb-2 mb-2">
+                      <h3 className="font-serif text-sm font-bold text-espresso">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          className="font-sans text-[11px] font-semibold text-gold hover:underline"
+                        >
+                          Mark all as read
+                        </button>
+                      )}
+                    </div>
+                    {notifications.length === 0 ? (
+                      <p className="font-sans text-xs text-bark/60 py-4 text-center italic">
+                        No new notifications
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto pr-1">
+                        {notifications.map((n) => (
+                          <button
+                            key={n.id}
+                            onClick={() => handleNotificationClick(n)}
+                            className={`flex flex-col items-start text-left w-full p-2.5 rounded-xl border transition-all ${
+                              n.is_read
+                                ? "bg-transparent border-transparent opacity-70 hover:bg-cream/40"
+                                : "bg-white/80 border-border/30 hover:border-gold/30 hover:bg-white"
+                            }`}
+                          >
+                            <span className={`font-sans text-xs font-bold ${n.is_read ? "text-bark" : "text-espresso"}`}>
+                              {n.title}
+                            </span>
+                            <span className="font-sans text-[11px] text-bark mt-0.5">
+                              {n.message}
+                            </span>
+                            <span className="font-sans text-[9px] text-bark/40 mt-1">
+                              {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cart */}
             <Link

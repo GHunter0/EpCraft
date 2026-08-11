@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRight, Check, X, Loader2, Clock, ShieldCheck, Tag } from "lucide-react";
 import AccountSidebar from "@/components/AccountSidebar";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/products";
 
 export default function AccountOverviewPage() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -149,46 +151,8 @@ export default function AccountOverviewPage() {
     }
   };
 
-  const handleAcceptRequest = async (requestId) => {
-    setMessage(null);
-    setAcceptingId(requestId);
-
-    try {
-      const response = await fetch("/api/custom-orders/accept", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId }),
-      });
-
-      const resData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(resData.error || "Failed to accept custom request.");
-      }
-
-      // Redirect user to PayHere sandbox payment page
-      const payhereParams = resData.payhereParams;
-
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "https://sandbox.payhere.lk/pay/checkout";
-
-      Object.entries(payhereParams).forEach(([key, val]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = typeof val === "object" ? JSON.stringify(val) : val;
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-    } catch (err) {
-      console.error(err);
-      setMessage(err.message || "An error occurred while accepting request.");
-      setMessageType("error");
-      setAcceptingId(null);
-    }
+  const handleAcceptRequest = (requestId) => {
+    router.push(`/checkout?custom_request_id=${requestId}`);
   };
 
   if (loading) {
@@ -343,9 +307,18 @@ export default function AccountOverviewPage() {
                         {/* Status Tag */}
                         <div>
                           {req.status === "pending_review" && (
-                            <span className="inline-flex items-center gap-1.5 rounded bg-gray-100 px-3 py-1 font-sans text-xs font-semibold text-gray-600 border border-gray-200">
-                              <Clock size={12} /> Pending Review
-                            </span>
+                            <div className="flex flex-col items-end gap-2">
+                              <span className="inline-flex items-center gap-1.5 rounded bg-gray-100 px-3 py-1 font-sans text-xs font-semibold text-gray-600 border border-gray-200">
+                                <Clock size={12} /> Pending Review
+                              </span>
+                              <button
+                                onClick={() => handleDeclineRequest(req.id)}
+                                disabled={decliningId === req.id}
+                                className="font-sans text-xs font-semibold text-red-600 hover:text-red-700 hover:underline transition-colors"
+                              >
+                                Cancel Request
+                              </button>
+                            </div>
                           )}
                           {req.status === "quoted" && (
                             <span className="inline-flex items-center gap-1.5 rounded bg-gold/15 px-3 py-1 font-sans text-xs font-semibold text-espresso border border-gold/30">
@@ -359,7 +332,7 @@ export default function AccountOverviewPage() {
                           )}
                           {req.status === "declined" && (
                             <span className="inline-flex items-center gap-1.5 rounded bg-red-50 px-3 py-1 font-sans text-xs font-semibold text-red-700 border border-red-200">
-                              <X size={12} /> Quote Declined
+                              <X size={12} /> {req.rejection_reason ? "Quote Declined" : "Cancelled"}
                             </span>
                           )}
                         </div>
@@ -409,6 +382,14 @@ export default function AccountOverviewPage() {
                               </button>
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {req.status === "declined" && req.rejection_reason && (
+                        <div className="bg-red-50/50 p-4 rounded-xl border border-red-200/40">
+                          <p className="font-sans text-xs text-red-800">
+                            Rejection Reason: <span className="font-semibold">{req.rejection_reason}</span>
+                          </p>
                         </div>
                       )}
                     </div>

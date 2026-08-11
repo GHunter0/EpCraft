@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, Package, MapPin, CreditCard, Clock, User } from "lucide-react";
 import { formatPrice } from "@/lib/products";
 import OrderStatusControl from "@/app/admin/orders/OrderStatusControl";
+import { markOrderAsPaid } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -222,15 +223,41 @@ export default async function AdminOrderDetailPage({ params }) {
                 </span>
               </p>
 
-              {/* Payment lock notice */}
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5">
-                <p className="font-sans text-xs text-amber-700 font-semibold">
-                  🔒 Payment status is controlled exclusively by the PayHere webhook — it cannot be edited here.
-                </p>
-              </div>
+              {/* Payment update / status controls */}
+              {order.payhere_order_id === "COD" ? (
+                <div className="mt-3 flex flex-col gap-2">
+                  {order.payment_status === "paid" ? (
+                    <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-2.5">
+                      <p className="font-sans text-xs text-green-700 font-semibold">
+                        ✓ Cash on Delivery payment received.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+                      <p className="font-sans text-xs text-blue-700 font-semibold">
+                        💵 This is a Cash on Delivery (COD) order.
+                      </p>
+                      <form action={async () => {
+                        "use server";
+                        await markOrderAsPaid(order.id);
+                      }}>
+                        <button type="submit" className="rounded-lg bg-espresso hover:bg-gold text-white font-sans text-xs font-semibold px-4 py-2 transition-colors w-fit">
+                          Mark as Paid (Received Cash)
+                        </button>
+                      </form>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5">
+                  <p className="font-sans text-xs text-amber-700 font-semibold">
+                    🔒 Payment status is controlled exclusively by the PayHere webhook — it cannot be edited here.
+                  </p>
+                </div>
+              )}
 
-              {/* Only allow admin status progression after payment confirmed */}
-              {order.payment_status !== "paid" && order.status === "pending_payment" ? (
+              {/* Only allow admin status progression after payment confirmed (except for COD orders) */}
+              {order.payment_status !== "paid" && order.status === "pending_payment" && order.payhere_order_id !== "COD" ? (
                 <p className="font-sans text-xs text-bark italic mt-3">
                   Awaiting payment confirmation before order can be processed.
                 </p>

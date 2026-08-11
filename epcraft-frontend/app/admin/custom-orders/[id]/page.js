@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/products";
+import { declineRequest } from "../actions";
 
 const STATUS_META = {
   pending_review: {
@@ -61,6 +62,10 @@ export default function AdminCustomOrderDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState(null);
   const [submitMessageType, setSubmitMessageType] = useState("success");
+
+  // Rejection form state
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [declining, setDeclining] = useState(false);
 
   // Verification state
   const [verifying, setVerifying] = useState(false);
@@ -130,6 +135,38 @@ export default function AdminCustomOrderDetailPage() {
       fetchRequest();
     });
   }, [fetchRequest]);
+
+  const handleDeclineRequest = async (e) => {
+    e.preventDefault();
+    setSubmitMessage(null);
+    setDeclining(true);
+
+    if (!rejectionReason.trim()) {
+      setSubmitMessage("Please enter a reason for rejection.");
+      setSubmitMessageType("error");
+      setDeclining(false);
+      return;
+    }
+
+    try {
+      const result = await declineRequest(id, rejectionReason.trim());
+      if (result.error) {
+        setSubmitMessage(result.error);
+        setSubmitMessageType("error");
+      } else {
+        setSubmitMessage("Request declined successfully.");
+        setSubmitMessageType("success");
+        setRejectionReason("");
+        await fetchRequest();
+      }
+    } catch (err) {
+      console.error("Decline request failed:", err);
+      setSubmitMessage("Failed to decline request.");
+      setSubmitMessageType("error");
+    } finally {
+      setDeclining(false);
+    }
+  };
 
   const handleSubmitQuote = async (e) => {
     e.preventDefault();
@@ -489,126 +526,182 @@ export default function AdminCustomOrderDetailPage() {
           )}
         </div>
 
-        {/* Existing Quote (if already quoted/accepted/declined) */}
-        {!isPendingReview && request.quoted_price && (
-          <div className="p-8 border-b border-border/30 bg-blue-50/30">
-            <h2 className="flex items-center gap-2 font-serif text-xl font-bold text-espresso mb-4">
-              <Tag size={18} className="text-blue-600" />
-              Submitted Quote
+        {/* Quote Details — shown if already quoted or declined */}
+        {(request.status === "quoted" || request.status === "accepted" || request.status === "declined") && (
+          <div className="p-8 border-b border-border/30 bg-sand/20">
+            <h2 className="font-serif text-lg font-bold text-espresso mb-4">
+              {request.status === "declined" ? "Rejection Details" : "Quote Details"}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <p className="font-sans text-xs uppercase tracking-widest text-bark font-semibold">
-                  Quoted Price
-                </p>
-                <p className="font-serif text-2xl font-bold text-espresso mt-1">
-                  {formatPrice(Number(request.quoted_price))}
-                </p>
-              </div>
-              <div>
-                <p className="font-sans text-xs uppercase tracking-widest text-bark font-semibold">
-                  Lead Time
-                </p>
-                <p className="font-sans text-sm font-semibold text-espresso mt-1">
-                  {request.quoted_lead_time || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="font-sans text-xs uppercase tracking-widest text-bark font-semibold">
-                  Admin Note
-                </p>
-                <p className="font-sans text-sm text-ink mt-1 italic">
-                  {request.admin_note || "—"}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {request.status === "declined" ? (
+                <div className="md:col-span-3">
+                  <p className="font-sans text-xs uppercase tracking-widest text-red-500 font-semibold">
+                    Reason for Rejection
+                  </p>
+                  <p className="font-sans text-sm text-red-700 mt-1 italic">
+                    {request.rejection_reason || "No reason provided."}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="font-sans text-xs uppercase tracking-widest text-bark font-semibold">
+                      Quoted Price
+                    </p>
+                    <p className="font-serif text-2xl font-bold text-espresso mt-1">
+                      {formatPrice(Number(request.quoted_price))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-sans text-xs uppercase tracking-widest text-bark font-semibold">
+                      Lead Time
+                    </p>
+                    <p className="font-sans text-sm font-semibold text-espresso mt-1">
+                      {request.quoted_lead_time || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-sans text-xs uppercase tracking-widest text-bark font-semibold">
+                      Admin Note
+                    </p>
+                    <p className="font-sans text-sm text-ink mt-1 italic">
+                      {request.admin_note || "—"}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
 
-        {/* Quote Form — only for pending_review */}
+        {/* Quote & Rejection Form — only for pending_review */}
         {isPendingReview && (
-          <div className="p-8">
-            <h2 className="flex items-center gap-2 font-serif text-xl font-bold text-espresso mb-6">
-              <Send size={18} className="text-gold" />
-              Submit Quote
-            </h2>
-
-            {submitMessage && (
-              <div
-                className={`mb-6 rounded-lg border p-4 text-sm font-sans ${
-                  submitMessageType === "success"
-                    ? "border-green-200 bg-green-50 text-green-800"
-                    : "border-red-200 bg-red-50 text-red-700"
-                }`}
-              >
-                {submitMessage}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitQuote} className="flex flex-col gap-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-border/30">
+            {/* Submit Quote */}
+            <div className="pb-8 md:pb-0 md:pr-8">
+              <h2 className="flex items-center gap-2 font-serif text-xl font-bold text-espresso mb-6">
+                <Send size={18} className="text-gold" />
+                Submit Quote
+              </h2>
+ 
+              {submitMessage && submitMessageType === "success" && (
+                <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800 font-sans">
+                  {submitMessage}
+                </div>
+              )}
+              {submitMessage && submitMessageType === "error" && (
+                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 font-sans">
+                  {submitMessage}
+                </div>
+              )}
+ 
+              <form onSubmit={handleSubmitQuote} className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <label className="flex flex-col gap-2">
+                    <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
+                      Quoted Price (LKR) *
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="1"
+                      required
+                      value={quotedPrice}
+                      onChange={(e) => setQuotedPrice(e.target.value)}
+                      placeholder="e.g. 12500"
+                      className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold"
+                    />
+                  </label>
+ 
+                  <label className="flex flex-col gap-2">
+                    <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
+                      Estimated Lead Time *
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      value={quotedLeadTime}
+                      onChange={(e) => setQuotedLeadTime(e.target.value)}
+                      placeholder="e.g. 3-4 weeks"
+                      className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold"
+                    />
+                  </label>
+                </div>
+ 
                 <label className="flex flex-col gap-2">
                   <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
-                    Quoted Price (LKR) *
+                    Admin Note (optional)
                   </span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    required
-                    value={quotedPrice}
-                    onChange={(e) => setQuotedPrice(e.target.value)}
-                    placeholder="e.g. 12500"
-                    className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold"
+                  <textarea
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    rows={3}
+                    placeholder="Any notes for the customer about this custom piece…"
+                    className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold resize-none"
                   />
                 </label>
-
+ 
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center justify-center gap-2 bg-espresso hover:bg-gold text-white px-8 py-3.5 rounded-pill font-sans text-sm font-semibold shadow-soft transition-colors disabled:opacity-50 w-fit"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Submitting…
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      {'Submit Quote & Move to "Quoted"'}
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+ 
+            {/* Decline Request */}
+            <div className="pt-8 md:pt-0 md:pl-8">
+              <h2 className="flex items-center gap-2 font-serif text-xl font-bold text-espresso mb-6">
+                <X size={18} className="text-red-500" />
+                Decline Request
+              </h2>
+ 
+              <form onSubmit={handleDeclineRequest} className="flex flex-col gap-5">
                 <label className="flex flex-col gap-2">
                   <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
-                    Estimated Lead Time *
+                    Reason for Rejection *
                   </span>
-                  <input
-                    type="text"
+                  <textarea
                     required
-                    value={quotedLeadTime}
-                    onChange={(e) => setQuotedLeadTime(e.target.value)}
-                    placeholder="e.g. 3-4 weeks"
-                    className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={3}
+                    placeholder="Please specify why this custom design request cannot be fulfilled…"
+                    className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold resize-none"
                   />
                 </label>
-              </div>
-
-              <label className="flex flex-col gap-2">
-                <span className="font-sans text-xs font-semibold uppercase tracking-widest text-bark">
-                  Admin Note (optional)
-                </span>
-                <textarea
-                  value={adminNote}
-                  onChange={(e) => setAdminNote(e.target.value)}
-                  rows={3}
-                  placeholder="Any notes for the customer about this custom piece…"
-                  className="rounded-xl border border-border/60 bg-white px-4 py-3.5 font-sans text-sm text-ink placeholder:text-bark/50 focus:outline-none focus:ring-2 focus:ring-gold resize-none"
-                />
-              </label>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center justify-center gap-2 bg-espresso hover:bg-gold text-white px-8 py-3.5 rounded-pill font-sans text-sm font-semibold shadow-soft transition-colors disabled:opacity-50 w-fit"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Submitting…
-                  </>
-                ) : (
-                  <>
-                    <Send size={16} />
-                    {'Submit Quote & Move to "Quoted"'}
-                  </>
-                )}
-              </button>
-            </form>
+ 
+                <button
+                  type="submit"
+                  disabled={declining}
+                  className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-8 py-3.5 rounded-pill font-sans text-sm font-semibold shadow-soft transition-colors disabled:opacity-50 w-fit"
+                >
+                  {declining ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Declining…
+                    </>
+                  ) : (
+                    <>
+                      <X size={16} />
+                      Decline Request
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
