@@ -37,9 +37,9 @@ export default async function AdminLayout({ children }) {
       <AdminSidebar userEmail={user.email} />
 
       {/* Main Workspace Area */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+      <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden pt-16 md:pt-0">
         {/* Simple Top Bar */}
-        <header className="h-[72px] bg-white border-b border-border/40 px-8 flex items-center justify-between shrink-0">
+        <header className="h-[72px] bg-white border-b border-border/40 px-4 sm:px-8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
             <span className="font-sans text-xs font-semibold text-bark uppercase tracking-widest">
@@ -52,7 +52,7 @@ export default async function AdminLayout({ children }) {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-8 lg:p-10 max-w-7xl w-full mx-auto">
+        <div className="flex-1 p-4 sm:p-8 lg:p-10 max-w-7xl w-full mx-auto">
           {children}
         </div>
       </main>
