@@ -60,7 +60,7 @@ export default function ShopProductCard({ product }) {
               Out of Stock
             </span>
           )}
-          <div className="absolute inset-x-[10%] bottom-0 translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-[-16px] group-hover:opacity-100 z-10">
+          <div className="absolute inset-x-[10%] bottom-0 translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-[-16px] group-hover:opacity-100 z-10 hidden md:block">
             <button
               onClick={handleCartClick}
               className={`w-full rounded-pill py-3 font-sans text-sm font-medium text-white shadow-soft transition-colors ${
@@ -75,6 +75,22 @@ export default function ShopProductCard({ product }) {
           <h3 className="font-serif text-lg font-semibold text-espresso">{product.name}</h3>
           <p className="pb-1 font-sans text-xs text-bark">{product.woodType || product.material}</p>
           <p className="font-serif text-base font-bold text-espresso">{formatPrice(product.price)}</p>
+          {/* Quick Add to Cart button visible on mobile only */}
+          <div className="mt-3 w-full md:hidden">
+            <button
+              onClick={handleCartClick}
+              disabled={!product.inStock}
+              className={`w-full rounded-pill py-2 font-sans text-xs font-semibold text-white shadow-soft transition-colors ${
+                !product.inStock
+                  ? "bg-sand/80 text-bark/40 cursor-not-allowed border border-border/40"
+                  : added
+                  ? "bg-green-700"
+                  : "bg-espresso"
+              }`}
+            >
+              {!product.inStock ? "Out of Stock" : added ? "Added!" : "Add to Cart"}
+            </button>
+          </div>
         </div>
       </Link>
     </div>

@@ -500,13 +500,62 @@ export default function Navbar({ onOpenChat }) {
             </div>
           </div>
 
-          <button
-            className="text-espresso md:hidden"
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
-          >
-            {open ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex items-center gap-3.5 md:hidden">
+            {/* AI Assistant Icon */}
+            <button
+              onClick={onOpenChat}
+              aria-label="Open AI Assistant"
+              className="text-bark hover:text-espresso transition-colors"
+            >
+              <Bot size={20} />
+            </button>
+
+            {/* Search */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              aria-label="Search catalog"
+              className="text-bark hover:text-espresso transition-colors"
+            >
+              <Search size={20} />
+            </button>
+
+            {/* Wishlist */}
+            <Link
+              href="/wishlist"
+              aria-label="Wishlist"
+              className="relative text-bark hover:text-espresso transition-colors"
+            >
+              <Heart size={20} />
+              {wishlist.length > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[9px] font-bold text-white">
+                  {wishlist.length}
+                </span>
+              )}
+            </Link>
+
+            {/* Cart */}
+            <Link
+              href="/cart"
+              aria-label="Cart"
+              className="relative text-bark hover:text-espresso transition-colors"
+            >
+              <ShoppingBag size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-espresso text-[9px] font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Menu Toggle */}
+            <button
+              className="text-espresso pl-1"
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              {open ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {open && (

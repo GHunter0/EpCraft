@@ -84,7 +84,7 @@ export default function ChatBot({ externalOpen, setExternalOpen }) {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[520px] w-[360px] sm:w-[400px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-white shadow-card animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 left-4 right-4 z-50 flex h-[480px] w-auto sm:left-auto sm:right-6 sm:bottom-24 sm:w-[400px] sm:h-[520px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-white shadow-card animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="flex items-center justify-between bg-espresso px-6 py-4 text-white">
             <div className="flex items-center gap-3">
