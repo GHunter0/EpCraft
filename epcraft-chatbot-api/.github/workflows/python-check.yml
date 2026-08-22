@@ -1,0 +1,22 @@
+name: Python checks
+on:
+  pull_request:
+    paths: ["epcraft-chatbot-api/**"]
+  push:
+    branches: [shalitha, main]
+    paths: ["epcraft-chatbot-api/**"]
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: epcraft-chatbot-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt pytest httpx
+      - run: python -m py_compile app/*.py
+      - run: pytest -q
