@@ -1,0 +1,290 @@
+EPCRAFT FRONTEND — CHATBOT API INTEGRATION GUIDE
+===================================================
+
+Purpose
+-------
+This document tells frontend developers how to connect the EpCraft Next.js frontend to the deployed FastAPI RAG chatbot service on Render.
+
+Important security rule
+-----------------------
+The frontend must NEVER contain any of these secret values:
+
+- GOOGLE_API_KEY
+- SUPABASE_KEY used by the chatbot backend
+- Supabase service-role key
+- Any Gemini or LLM provider key
+
+The frontend only uses the public Render API URL. Gemini and Supabase secrets remain in Render Environment Variables.
+
+
+1. API contract
+---------------
+
+Set the API base URL below after the backend developer shares the final Render service URL:
+
+API base URL:
+https://epcraft-chatbot-v-1-0.onrender.com
+
+Endpoints:
+
+GET  /             Service identity
+GET  /health       Backend readiness/health status
+GET  /docs         Swagger API documentation and manual API test page
+POST /chat         Send a chatbot question
+
+Chat request:
+
+POST https://epcraft-chatbot-v-1-0.onrender.com/chat
+Content-Type: application/json
+
+{
+  "question": "Do you offer free shipping?",
+  "chat_history": ""
+}
+
+Successful response:
+
+{
+  "answer": "...chatbot answer..."
+}
+
+
+2. Configure the frontend environment variable
+----------------------------------------------
+
+In epcraft-frontend, create/update the local file:
+
+.epcraft-frontend/.env.local
+
+Add:
+
+NEXT_PUBLIC_CHATBOT_API_URL=https://epcraft-chatbot-v-1-0.onrender.com
+
+Example:
+
+NEXT_PUBLIC_CHATBOT_API_URL=https://epcraft-chatbot-api.onrender.com
+
+Do not commit .env.local. It should remain in .gitignore.
+
+For the deployed Vercel frontend:
+
+1. Open the Vercel project.
+2. Go to Settings -> Environment Variables.
+3. Add:
+
+   Name:  NEXT_PUBLIC_CHATBOT_API_URL
+   Value: https://epcraft-chatbot-v-1-0.onrender.com
+
+4. Select the required environments: Production, Preview, and/or Development.
+5. Redeploy the frontend. NEXT_PUBLIC_ variables are embedded during the Next.js build, so a redeploy is required after changing this value.
+
+
+3. CORS requirement (backend developer / Render owner)
+-------------------------------------------------------
+
+The Render API must allow the frontend domain.
+
+In Render -> Chatbot Web Service -> Environment, configure:
+
+ALLOWED_ORIGINS=https://ep-craft.vercel.app
+
+For local frontend development plus production, set:
+
+ALLOWED_ORIGINS=http://localhost:3000,https://ep-craft.vercel.app
+
+If the frontend uses Vercel preview URLs, either add the exact preview origin when testing, or ask the backend developer to provide an approved preview-origin policy.
+
+If the browser console shows a CORS error, verify that:
+
+- The frontend URL is exactly listed in ALLOWED_ORIGINS.
+- The URL uses https in production.
+- Render has finished redeploying after the environment-variable update.
+
+
+4. Basic API client module
+--------------------------
+
+Create a frontend utility file, for example:
+
+epcraft-frontend/lib/chatbot-api.js
+
+Use this code:
+
+--------------------------------------------------
+const API_URL = process.env.NEXT_PUBLIC_CHATBOT_API_URL;
+
+/**
+ * Sends one customer question to the EpCraft chatbot API.
+ * @param {string} question - The customer's newly typed message.
+ * @param {string} chatHistory - Previous messages formatted as plain text.
+ * @returns {Promise<string>} The chatbot answer.
+ */
+export async function askChatbot(question, chatHistory = "") {
+  if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_CHATBOT_API_URL is not configured.");
+  }
+
+  const response = await fetch(`${API_URL}/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      question,
+      chat_history: chatHistory,
+    }),
+  });
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("The chatbot service returned an invalid response.");
+  }
+
+  if (!response.ok) {
+    throw new Error(body.detail || "The chatbot could not answer right now.");
+  }
+
+  return body.answer;
+}
+--------------------------------------------------
+
+
+5. Manage chat history automatically
+-------------------------------------
+
+Customers must NOT type chat_history themselves.
+
+The UI sends only the customer's new message. The frontend stores earlier messages and creates chat_history automatically for every request.
+
+Suggested message shape:
+
+const [messages, setMessages] = useState([
+  // { role: "user", content: "..." },
+  // { role: "assistant", content: "..." },
+]);
+
+Convert recent messages to API history:
+
+--------------------------------------------------
+function createHistory(messages) {
+  // Limit history to the last 10 messages so requests do not grow forever.
+  return messages
+    .slice(-10)
+    .map((message) => {
+      const label = message.role === "user" ? "Customer" : "Assistant";
+      return `${label}: ${message.content}`;
+    })
+    .join("\n");
+}
+--------------------------------------------------
+
+Example send-message flow in a client component:
+
+--------------------------------------------------
+import { useState } from "react";
+import { askChatbot } from "@/lib/chatbot-api";
+
+function createHistory(messages) {
+  return messages
+    .slice(-10)
+    .map((message) => `${message.role === "user" ? "Customer" : "Assistant"}: ${message.content}`)
+    .join("\n");
+}
+
+export default function Chatbot() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function sendMessage(event) {
+    event.preventDefault();
+    const question = input.trim();
+    if (!question || isLoading) return;
+
+    const previousMessages = messages;
+    const userMessage = { role: "user", content: question };
+
+    setMessages((current) => [...current, userMessage]);
+    setInput("");
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const answer = await askChatbot(question, createHistory(previousMessages));
+      setMessages((current) => [...current, { role: "assistant", content: answer }]);
+    } catch (err) {
+      setError(err.message || "Unable to contact the chatbot.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Render messages, input field, loading state, and error in the UI.
+}
+--------------------------------------------------
+
+A New Chat button should do:
+
+setMessages([]);
+setError("");
+
+This starts a new temporary conversation.
+
+
+6. Loading and error experience
+--------------------------------
+
+The Render free service can sleep after inactivity. The first request can take 30-60 seconds to wake up.
+
+The UI should:
+
+- Display a loading message, e.g. "Assistant is thinking...".
+- Disable repeated sends while isLoading is true.
+- Keep the typed question/message visible.
+- Display a helpful error instead of failing silently.
+- Offer a Retry button if the request fails.
+
+Suggested friendly messages:
+
+- First request: "Starting the assistant. This can take a moment..."
+- Error: "The assistant is temporarily unavailable. Please try again."
+- Configuration error: "Chat service configuration needs attention. Please contact support."
+
+
+7. Test checklist
+-----------------
+
+Before merging the frontend chatbot UI:
+
+[ ] Open https://epcraft-chatbot-v-1-0.onrender.com/health and verify it responds.
+[ ] Open https://epcraft-chatbot-v-1-0.onrender.com/docs and manually test POST /chat.
+[ ] Set NEXT_PUBLIC_CHATBOT_API_URL locally.
+[ ] Confirm a message returns an answer in the UI.
+[ ] Confirm a follow-up question receives previous chat context automatically.
+[ ] Confirm the customer never sees or edits chat_history.
+[ ] Confirm browser console has no CORS error.
+[ ] Confirm Gemini/Supabase secret keys are not in frontend source, .env.local.example, browser network requests, or Git commits.
+[ ] Test a Render wake-up/loading state.
+[ ] Test error handling by temporarily using an invalid API URL locally.
+
+
+8. Current architecture and future work
+----------------------------------------
+
+Current version:
+
+Browser chat UI -> Render FastAPI API -> Gemini + Supabase product data -> response
+
+Chat history is stored temporarily in browser state. It is lost when the customer refreshes the page, closes the browser, or begins a new chat.
+
+Future persistent history option:
+
+- Create conversations and messages tables in Supabase.
+- Require/authenticate a user or create an anonymous conversation ID.
+- Send conversation_id instead of the entire chat history.
+- Let the backend retrieve recent messages and save each question/answer.
+
+Do not implement persistent history until the team agrees on authentication, privacy, retention, and database access policies.
