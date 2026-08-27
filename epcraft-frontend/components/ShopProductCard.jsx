@@ -60,7 +60,8 @@ export default function ShopProductCard({ product }) {
               Out of Stock
             </span>
           )}
-          <div className="absolute inset-x-[10%] bottom-0 translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-[-16px] group-hover:opacity-100 z-10 hidden md:block">
+          {/* Desktop-only hover-reveal button */}
+          <div className="absolute inset-x-[10%] bottom-0 z-10 hidden translate-y-full opacity-0 transition-all duration-200 group-hover:translate-y-[-16px] group-hover:opacity-100 md:block">
             <button
               onClick={handleCartClick}
               className={`w-full rounded-pill py-3 font-sans text-sm font-medium text-white shadow-soft transition-colors ${
@@ -75,24 +76,24 @@ export default function ShopProductCard({ product }) {
           <h3 className="font-serif text-lg font-semibold text-espresso">{product.name}</h3>
           <p className="pb-1 font-sans text-xs text-bark">{product.woodType || product.material}</p>
           <p className="font-serif text-base font-bold text-espresso">{formatPrice(product.price)}</p>
-          {/* Quick Add to Cart button visible on mobile only */}
-          <div className="mt-3 w-full md:hidden">
-            <button
-              onClick={handleCartClick}
-              disabled={!product.inStock}
-              className={`w-full rounded-pill py-2 font-sans text-xs font-semibold text-white shadow-soft transition-colors ${
-                !product.inStock
-                  ? "bg-sand/80 text-bark/40 cursor-not-allowed border border-border/40"
-                  : added
-                  ? "bg-green-700"
-                  : "bg-espresso"
-              }`}
-            >
-              {!product.inStock ? "Out of Stock" : added ? "Added!" : "Add to Cart"}
-            </button>
-          </div>
         </div>
       </Link>
+      {/* Mobile-only persistent button — hover has no equivalent on touch, so this always shows */}
+      <div className="px-6 pb-6 md:hidden">
+        <button
+          onClick={handleCartClick}
+          disabled={!product.inStock}
+          className={`w-full rounded-pill py-3 font-sans text-sm font-medium text-white shadow-soft transition-colors ${
+            !product.inStock
+              ? "cursor-not-allowed bg-sand text-bark/50"
+              : added
+              ? "bg-green-700"
+              : "bg-espresso active:bg-gold"
+          }`}
+        >
+          {!product.inStock ? "Out of Stock" : added ? "Added!" : "Add to Cart"}
+        </button>
+      </div>
     </div>
   );
 }

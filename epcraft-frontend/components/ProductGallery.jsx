@@ -2,17 +2,21 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { RotateCw } from "lucide-react";
+import { ZoomIn, X } from "lucide-react";
 import { getProductImageUrl } from "@/lib/products";
 
 export default function ProductGallery({ product }) {
-  const [active, setActive] = useState(0);
-  const thumbs = [0, 1, 2, 3];
+  const [zoomed, setZoomed] = useState(false);
   const imageUrl = product ? getProductImageUrl(product.image_url || product.image) : null;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-cream">
+      <button
+        type="button"
+        onClick={() => imageUrl && setZoomed(true)}
+        aria-label="Tap to zoom product image"
+        className="group relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-cream"
+      >
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -25,34 +29,38 @@ export default function ProductGallery({ product }) {
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-sand to-border/60" />
         )}
-        <button className="absolute bottom-6 right-6 flex items-center gap-2 rounded-pill border border-border/20 bg-white/80 px-4 py-2 font-sans text-sm font-semibold tracking-wide text-espresso shadow-sm backdrop-blur-sm">
-          <RotateCw size={16} />
-          360° View
-        </button>
-      </div>
-      <div className="flex gap-4 overflow-x-auto pb-2">
-        {thumbs.map((i) => (
+        {imageUrl && (
+          <span className="absolute bottom-6 right-6 flex items-center gap-2 rounded-pill border border-border/20 bg-white/80 px-4 py-2 font-sans text-sm font-semibold tracking-wide text-espresso shadow-sm backdrop-blur-sm transition group-hover:bg-white">
+            <ZoomIn size={16} />
+            Tap to Zoom
+          </span>
+        )}
+      </button>
+
+      {/* Full-screen zoom overlay */}
+      {zoomed && imageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4"
+          onClick={() => setZoomed(false)}
+        >
           <button
-            key={i}
-            onClick={() => setActive(i)}
-            className={`h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-sand transition relative ${
-              active === i ? "ring-2 ring-walnut ring-offset-2" : "border border-border/40"
-            }`}
+            aria-label="Close zoomed image"
+            className="absolute right-5 top-5 text-white"
+            onClick={() => setZoomed(false)}
           >
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={`${product?.name || "Product"} thumb ${i}`}
-                fill
-                sizes="96px"
-                className="object-cover"
-              />
-            ) : (
-              <div className="h-full w-full bg-gradient-to-br from-sand/80 to-border/40" />
-            )}
+            <X size={28} />
           </button>
-        ))}
-      </div>
+          <div className="relative h-full max-h-[90vh] w-full max-w-3xl">
+            <Image
+              src={imageUrl}
+              alt={product?.name || "Product image"}
+              fill
+              sizes="100vw"
+              className="object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
