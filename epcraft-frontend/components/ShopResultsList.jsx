@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { LayoutGrid, List, ChevronDown } from "lucide-react";
 import ShopProductCard from "@/components/ShopProductCard";
 
 const sortOptions = ["Best Selling", "Price: Low to High", "Price: High to Low", "Newest"];
+const PAGE_SIZE = 9;
 
 export default function ShopResultsList({ products = [] }) {
   const router = useRouter();
@@ -14,6 +15,16 @@ export default function ShopResultsList({ products = [] }) {
 
   const [view, setView] = useState("grid");
   const [sortOpen, setSortOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const visibleProducts = products.slice(0, visibleCount);
+
+  const searchParamsString = searchParams.toString();
+  const [prevParams, setPrevParams] = useState(searchParamsString);
+
+  if (searchParamsString !== prevParams) {
+    setPrevParams(searchParamsString);
+    setVisibleCount(PAGE_SIZE);
+  }
 
   const currentSort = searchParams.get("sort") || "Best Selling";
 
@@ -100,15 +111,20 @@ export default function ShopResultsList({ products = [] }) {
               : "flex flex-col gap-6"
           }
         >
-          {products.map((product) => (
+          {visibleProducts.map((product) => (
             <ShopProductCard key={product.id} product={product} />
           ))}
         </div>
       )}
 
-      {products.length > 0 && (
+      {visibleCount < products.length && (
         <div className="flex justify-center pt-8">
-          <button className="btn-outline-dark px-12 py-4">Load More Products</button>
+          <button
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            className="btn-outline-dark px-12 py-4"
+          >
+            Load More Products
+          </button>
         </div>
       )}
     </div>

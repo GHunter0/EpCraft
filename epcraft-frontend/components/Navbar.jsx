@@ -500,56 +500,44 @@ export default function Navbar({ onOpenChat }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3.5 md:hidden">
-            {/* AI Assistant Icon */}
-            <button
-              onClick={onOpenChat}
-              aria-label="Open AI Assistant"
-              className="text-bark hover:text-espresso transition-colors"
-            >
-              <Bot size={20} />
-            </button>
-
-            {/* Search */}
+          {/* Mobile action row: search, cart, and menu stay reachable without opening the hamburger */}
+          <div className="flex items-center gap-4 md:hidden">
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Search catalog"
               className="text-bark hover:text-espresso transition-colors"
             >
-              <Search size={20} />
+              <Search size={22} />
             </button>
 
-            {/* Wishlist */}
             <Link
               href="/wishlist"
               aria-label="Wishlist"
               className="relative text-bark hover:text-espresso transition-colors"
             >
-              <Heart size={20} />
+              <Heart size={22} />
               {wishlist.length > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[9px] font-bold text-white">
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-white">
                   {wishlist.length}
                 </span>
               )}
             </Link>
 
-            {/* Cart */}
             <Link
               href="/cart"
               aria-label="Cart"
               className="relative text-bark hover:text-espresso transition-colors"
             >
-              <ShoppingBag size={20} />
+              <ShoppingBag size={22} />
               {cartCount > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-espresso text-[9px] font-bold text-white">
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-espresso text-[10px] font-bold text-white">
                   {cartCount}
                 </span>
               )}
             </Link>
 
-            {/* Menu Toggle */}
             <button
-              className="text-espresso pl-1"
+              className="text-espresso"
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle menu"
             >
@@ -561,6 +549,16 @@ export default function Navbar({ onOpenChat }) {
         {open && (
           <div className="border-t border-border/60 bg-cream px-6 py-6 md:hidden">
             <nav className="flex flex-col gap-4">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  onOpenChat?.();
+                }}
+                className="flex items-center gap-2 self-start rounded-pill bg-gold/15 px-4 py-2 font-sans text-sm font-semibold text-espresso"
+              >
+                <Bot size={16} />
+                Ask AI Assistant
+              </button>
               {links.map((link) => (
                 <Link
                   key={link.href}

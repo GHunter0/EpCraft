@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Minus, Plus, Sparkles, MessageCircleQuestion, Truck, ShieldCheck, Check } from "lucide-react";
 import { useShop } from "@/lib/ShopContext";
@@ -19,6 +19,8 @@ export default function ProductPurchasePanel({ product }) {
   const [added, setAdded] = useState(false);
 
   const { addToCart } = useShop();
+  const mainButtonRef = useRef(null);
+  const [mainButtonVisible, setMainButtonVisible] = useState(true);
 
   const isOutOfStock = (product.stock !== undefined && Number(product.stock) <= 0 && !product.allowBackorder) || (product.inStock === false) || (product.in_stock === false);
 
@@ -31,6 +33,18 @@ export default function ProductPurchasePanel({ product }) {
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
   };
+
+  // Show a sticky mobile bar only once the real Add to Cart button scrolls out of view
+  useEffect(() => {
+    const el = mainButtonRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setMainButtonVisible(entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex flex-col gap-8">
@@ -118,6 +132,7 @@ export default function ProductPurchasePanel({ product }) {
             </div>
           )}
           <button
+            ref={mainButtonRef}
             onClick={handleAddToCart}
             disabled={isOutOfStock}
             className={`flex-1 rounded-pill py-4 font-sans text-base font-semibold tracking-wide text-white shadow-soft transition-colors ${
@@ -164,7 +179,28 @@ export default function ProductPurchasePanel({ product }) {
           Lifetime warranty on structural timber integrity
         </div>
       </div>
+
+      {/* Sticky mobile Add-to-Cart bar — appears once the main button scrolls off-screen */}
+      {!mainButtonVisible && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border/60 bg-white/95 px-4 py-3 shadow-card backdrop-blur-md pb-[calc(env(safe-area-inset-bottom)+0.75rem)] md:hidden">
+          <span className="font-serif text-lg font-bold text-espresso">
+            {formatPrice(product.price)}
+          </span>
+          <button
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className={`flex-1 rounded-pill py-3 font-sans text-sm font-semibold tracking-wide text-white shadow-soft transition-colors ${
+              isOutOfStock
+                ? "bg-sand text-bark/40 cursor-not-allowed"
+                : added
+                ? "bg-green-700"
+                : "bg-espresso active:bg-gold"
+            }`}
+          >
+            {isOutOfStock ? "Out of Stock" : added ? "Added!" : "Add to Cart"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
