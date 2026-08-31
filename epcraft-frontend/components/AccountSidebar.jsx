@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   LayoutGrid,
@@ -9,6 +10,8 @@ import {
   MapPin,
   Settings,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -23,7 +26,9 @@ const navItems = [
 export default function AccountSidebar({ active, userProfile }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(userProfile || null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const supabase = createClient();
+  const pathname = usePathname();
 
   useEffect(() => {
     async function loadUserData() {
@@ -47,6 +52,12 @@ export default function AccountSidebar({ active, userProfile }) {
     loadUserData();
   }, [userProfile]);
 
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileOpen(false);
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -54,9 +65,10 @@ export default function AccountSidebar({ active, userProfile }) {
 
   const displayName = profile?.name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Valued Member";
   const joinedYear = user?.created_at ? new Date(user.created_at).getFullYear() : new Date().getFullYear();
+  const activeItem = navItems.find((item) => item.label === active);
 
-  return (
-    <aside className="flex w-full md:w-64 shrink-0 flex-col justify-between rounded-r-xl border-r border-border/20 bg-cream py-8 shadow-soft md:min-h-full">
+  const sidebarBody = (
+    <>
       <div className="flex flex-col gap-8 px-4">
         <p className="font-serif italic text-base text-espresso">Artisan Wood Member</p>
 
@@ -100,6 +112,54 @@ export default function AccountSidebar({ active, userProfile }) {
           Logout
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile trigger bar — replaces the old full-width sidebar that pushed
+          page content below the fold on small screens */}
+      <div className="flex items-center justify-between border-b border-border/20 bg-cream px-4 py-3 md:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="flex items-center gap-2 rounded-pill border border-border/60 bg-white px-4 py-2 font-sans text-sm font-semibold text-espresso"
+        >
+          <Menu size={16} />
+          Account Menu
+        </button>
+        {activeItem && (
+          <span className="flex items-center gap-2 font-sans text-sm font-semibold text-espresso">
+            <activeItem.icon size={16} />
+            {activeItem.label}
+          </span>
+        )}
+      </div>
+
+      {/* Mobile slide-in drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            aria-label="Close account menu"
+            className="absolute inset-0 bg-ink/40 backdrop-blur-xs"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="absolute left-0 top-0 flex h-full w-[85%] max-w-xs flex-col justify-between overflow-y-auto bg-cream py-8 shadow-card animate-in slide-in-from-left duration-200">
+            <div className="mb-2 flex items-center justify-between px-4">
+              <h2 className="font-serif text-xl font-bold text-espresso">My Account</h2>
+              <button onClick={() => setMobileOpen(false)} aria-label="Close account menu">
+                <X size={22} className="text-espresso" />
+              </button>
+            </div>
+            {sidebarBody}
+          </div>
+        </div>
+      )}
+
+      {/* Desktop sidebar — unchanged */}
+      <aside className="hidden md:flex w-64 shrink-0 flex-col justify-between rounded-r-xl border-r border-border/20 bg-cream py-8 shadow-soft md:min-h-full">
+        {sidebarBody}
+      </aside>
+    </>
   );
 }
