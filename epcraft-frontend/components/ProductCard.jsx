@@ -4,10 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { formatPrice, getProductImageUrl } from "@/lib/products";
+import { useShop } from "@/lib/ShopContext";
 
 export default function ProductCard({ product }) {
   const imageUrl = getProductImageUrl(product.image_url || product.image);
-  
+  const { toggleWishlist, isInWishlist } = useShop();
+  const saved = isInWishlist(product.id);
+
   const isOutOfStock = (product.stock !== undefined && Number(product.stock) <= 0 && !product.allowBackorder) || (product.inStock === false) || (product.in_stock === false);
 
   return (
@@ -36,11 +39,12 @@ export default function ProductCard({ product }) {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            toggleWishlist(product.id);
           }}
-          aria-label="Add to wishlist"
+          aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
           className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-pill bg-white/80 backdrop-blur-md transition hover:bg-white"
         >
-          <Heart size={18} className="text-espresso" />
+          <Heart size={18} className={saved ? "fill-red-600 text-red-600" : "text-espresso"} />
         </button>
       </div>
       <div className="flex flex-col items-center gap-1 text-center">

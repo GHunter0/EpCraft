@@ -1,9 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { Facebook, Instagram, ArrowUp } from "lucide-react";
 
-const exploreLinks = ["New Arrivals", "Best Sellers", "The AI Design Lab", "Wholesale"];
+const exploreLinks = [
+  { label: "New Arrivals", href: "/shop" },
+  { label: "Best Sellers", href: "/shop" },
+  { label: "The AI Design Lab", href: "/ai-stylist" },
+  { label: "Wholesale", href: "/wholesale" },
+];
 const conciergeLinks = [
   { label: "Shipping & Returns", href: "/shipping" },
   { label: "Care Instructions", href: "/care" },
@@ -12,6 +18,17 @@ const conciergeLinks = [
 ];
 
 export default function Footer() {
+  // Floating back-to-top button — visible once the user has scrolled down,
+  // instead of only being reachable after scrolling all the way to the footer.
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 480);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <footer className="relative border-t border-border/40 bg-cream px-6 py-16 md:px-16">
       <div className="container-page grid grid-cols-1 gap-12 md:grid-cols-4">
@@ -45,9 +62,9 @@ export default function Footer() {
         <div>
           <p className="font-serif text-xl text-espresso">Explore</p>
           <ul className="mt-6 flex flex-col gap-3">
-            {exploreLinks.map((label) => (
-              <li key={label} className="font-sans text-base text-bark hover:text-espresso">
-                <Link href="/shop">{label}</Link>
+            {exploreLinks.map((item) => (
+              <li key={item.label} className="font-sans text-base text-bark hover:text-espresso">
+                <Link href={item.href}>{item.label}</Link>
               </li>
             ))}
           </ul>
@@ -69,6 +86,8 @@ export default function Footer() {
           <p className="mt-6 font-sans text-base text-bark">
             Join our inner circle for early access and craftsmanship stories.
           </p>
+          {/* NOTE: no submit handler yet — intentionally left as-is per product owner,
+              pending a decision on which email service (Mailchimp/ConvertKit/etc.) to wire up. */}
           <form className="mt-3 flex flex-col gap-3">
             <input
               type="email"
@@ -96,13 +115,17 @@ export default function Footer() {
         </div>
       </div>
 
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="absolute right-10 top-10 flex h-14 w-14 items-center justify-center rounded-pill bg-espresso text-white shadow-soft"
-        aria-label="Back to top"
-      >
-        <ArrowUp size={22} />
-      </button>
+      {/* Persistent floating back-to-top button */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 left-6 z-40 flex h-12 w-12 items-center justify-center rounded-pill bg-espresso text-white shadow-card transition-transform hover:scale-110 md:h-14 md:w-14"
+          aria-label="Back to top"
+        >
+          <ArrowUp size={20} className="md:hidden" />
+          <ArrowUp size={22} className="hidden md:block" />
+        </button>
+      )}
     </footer>
   );
 }

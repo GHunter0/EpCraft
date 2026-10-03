@@ -452,13 +452,15 @@ export function ShopProvider({ children }) {
         cartSubtotal,
         stockLevels,
         refreshStockLevels,
+        showToast,
       }}
     >
       {children}
       
-      {/* Dynamic Aesthetic Toast System */}
+      {/* Dynamic Aesthetic Toast System — positioned top-right so it never collides
+          with the fixed chat button or the mobile sticky Add-to-Cart bar (both bottom-anchored) */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-[100] max-w-sm rounded-xl border border-red-200 bg-white/95 p-4 shadow-card backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed right-4 top-24 z-[100] max-w-sm rounded-xl border border-red-200 bg-white/95 p-4 shadow-card backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 md:right-6">
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
             <p className="font-sans text-sm font-medium text-ink">{toast.message}</p>

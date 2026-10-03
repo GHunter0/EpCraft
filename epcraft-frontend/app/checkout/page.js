@@ -238,6 +238,7 @@ function CheckoutContent() {
           customRequestId: customRequestId || null,
           cartItems: checkoutCart.map((item) => ({
             id: item.id,
+            nodeId: item.nodeId,
             quantity: item.quantity,
             customOptions: item.customOptions,
           })),
@@ -291,31 +292,31 @@ function CheckoutContent() {
 
   return (
     <div className="container-page flex flex-col gap-10 py-12 pb-24 bg-cream min-h-screen">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/cart" className="flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-wider text-bark hover:text-espresso">
           <ArrowLeft size={16} /> Return to Cart
         </Link>
-        <span className="font-serif text-2xl font-bold text-espresso">EpCraft Secure Checkout</span>
-        <div className="w-24" />
+        <span className="font-serif text-xl font-bold text-espresso sm:text-2xl">Secure Checkout</span>
+        <div className="hidden w-24 sm:block" />
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center justify-center gap-8 border-y border-border/40 py-6">
+      <div className="flex items-center justify-center gap-3 border-y border-border/40 py-6 sm:gap-8">
         {steps.map((step, i) => (
-          <div key={step} className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
+          <div key={step} className="flex items-center gap-3 sm:gap-8">
+            <div className="flex items-center gap-2 sm:gap-3">
               <span
-                className={`flex h-8 w-8 items-center justify-center rounded-pill font-sans text-sm font-bold ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-pill font-sans text-xs font-bold sm:h-8 sm:w-8 sm:text-sm ${
                   i === 0 ? "bg-espresso text-white" : "border border-bark/40 text-ink opacity-40"
                 }`}
               >
                 {i + 1}
               </span>
-              <span className={`font-sans text-sm font-medium ${i === 0 ? "text-espresso" : "text-ink opacity-40"}`}>
+              <span className={`hidden font-sans text-sm font-medium sm:inline ${i === 0 ? "text-espresso" : "text-ink opacity-40"}`}>
                 {step}
               </span>
             </div>
-            {i < steps.length - 1 && <div className="h-px w-16 bg-gold/50" />}
+            {i < steps.length - 1 && <div className="h-px w-8 bg-gold/50 sm:w-16" />}
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MessageSquare, X, Send, Sparkles, Bot, User } from "lucide-react";
 import Link from "next/link";
 import { useShop } from "@/lib/ShopContext";
@@ -85,6 +86,10 @@ export default function ChatBot({ externalOpen, setExternalOpen }) {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
+  const pathname = usePathname();
+  // Product pages show a mobile sticky Add-to-Cart bar at the bottom — lift the
+  // chat trigger above it there so the two never overlap.
+  const isProductPage = pathname?.startsWith("/product/");
 
   // Extract user info from ShopContext if logged in
   const { user } = useShop() || {};
@@ -155,7 +160,9 @@ export default function ChatBot({ externalOpen, setExternalOpen }) {
       <button
         onClick={toggleChat}
         aria-label="Open EpCraft AI Assistant"
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-espresso text-gold shadow-card transition-transform duration-200 hover:scale-110 hover:bg-gold hover:text-white"
+        className={`fixed right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-espresso text-gold shadow-card transition-transform duration-200 hover:scale-110 hover:bg-gold hover:text-white ${
+          isProductPage ? "bottom-24 md:bottom-6" : "bottom-6"
+        }`}
       >
         {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
       </button>

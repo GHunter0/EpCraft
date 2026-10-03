@@ -1,22 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Minus, Plus, Trash2, ArrowRight, ShieldCheck, ShoppingBag } from "lucide-react";
 import { formatPrice, getProductImageUrl } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, cartSubtotal, stockLevels } = useShop();
+  const { cart, removeFromCart, updateQuantity, cartSubtotal, stockLevels, showToast } = useShop();
   const [promo, setPromo] = useState("");
   const [discount, setDiscount] = useState(0);
 
   // Selection states
-  const [selectedItems, setSelectedItems] = useState(() => {
-    return cart.map((item) => item.cartItemId);
-  });
+  const [selectedItems, setSelectedItems] = useState(() => cart.map((item) => item.cartItemId));
 
-  // Keep selectedItems in sync if cart changes (e.g. items deleted)
+  // The cart loads asynchronously (Supabase or localStorage) after this component
+  // mounts, so the initial useState above usually captures an empty array. Once
+  // the cart actually arrives, select every item that isn't already tracked yet
+  // (covers first load and any newly-added items) without clobbering deselections.
+  const hasSyncedInitialCart = useRef(false);
+  useEffect(() => {
+    if (cart.length === 0) return;
+    if (!hasSyncedInitialCart.current) {
+      hasSyncedInitialCart.current = true;
+      setSelectedItems(cart.map((item) => item.cartItemId));
+      return;
+    }
+    setSelectedItems((prev) => {
+      const knownIds = new Set(prev);
+      const newIds = cart.map((item) => item.cartItemId).filter((id) => !knownIds.has(id));
+      return newIds.length > 0 ? [...prev, ...newIds] : prev;
+    });
+  }, [cart]);
   const activeSelectedItems = cart.filter(item => selectedItems.includes(item.cartItemId));
 
   const selectedSubtotal = activeSelectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -49,7 +64,7 @@ export default function CartPage() {
     } else if (promo.trim().toUpperCase() === "WOOD20") {
       setDiscount(Math.round(selectedSubtotal * 0.2));
     } else {
-      alert("Invalid code. Try 'EPCRAFT10' or 'WOOD20'");
+      showToast("Invalid code. Try 'EPCRAFT10' or 'WOOD20'");
     }
   };
 
@@ -101,30 +116,39 @@ export default function CartPage() {
                   return (
                     <div
                       key={item.cartItemId}
-                      className={`flex gap-6 border-b border-border/40 pb-8 items-center ${!isSelected ? 'opacity-70' : ''}`}
+                      className={`flex flex-col gap-4 border-b border-border/40 pb-8 sm:flex-row sm:items-center sm:gap-6 ${!isSelected ? 'opacity-70' : ''}`}
                     >
-                      {/* Selection Checkbox */}
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelectItem(item.cartItemId)}
-                        className="h-5 w-5 rounded border-gray-300 text-espresso focus:ring-espresso cursor-pointer accent-espresso shrink-0 mr-2"
-                      />
-                      <div className="h-32 w-32 shrink-0 rounded-xl bg-sand flex items-center justify-center font-serif text-xs text-bark/60 overflow-hidden relative border border-border/30">
-                        {item.image ? (
-                          <img
-                            src={getProductImageUrl(item.image)}
-                            alt={item.name}
-                            className="h-full w-full object-cover rounded-xl"
-                          />
-                        ) : (
-                          item.name
-                        )}
+                      <div className="flex items-center gap-4 sm:contents">
+                        {/* Selection Checkbox */}
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectItem(item.cartItemId)}
+                          className="h-5 w-5 shrink-0 rounded border-gray-300 text-espresso focus:ring-espresso cursor-pointer accent-espresso sm:mr-2"
+                        />
+                        <Link
+                          href={`/product/${item.id}`}
+                          className="h-24 w-24 shrink-0 rounded-xl bg-sand flex items-center justify-center font-serif text-xs text-bark/60 overflow-hidden relative border border-border/30 sm:h-32 sm:w-32"
+                        >
+                          {item.image ? (
+                            <img
+                              src={getProductImageUrl(item.image)}
+                              alt={item.name}
+                              className="h-full w-full object-cover rounded-xl"
+                            />
+                          ) : (
+                            item.name
+                          )}
+                        </Link>
                       </div>
-                      <div className="flex flex-1 flex-col justify-between">
+                      <div className="flex flex-1 flex-col justify-between gap-4 sm:gap-0">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <h2 className="font-serif text-2xl text-espresso font-semibold">{item.name}</h2>
+                            <Link href={`/product/${item.id}`}>
+                              <h2 className="font-serif text-xl text-espresso font-semibold hover:text-gold transition-colors sm:text-2xl">
+                                {item.name}
+                              </h2>
+                            </Link>
                             <p className="mt-1 font-sans text-sm text-bark">
                               {item.customOptions ? (
                                 <span>
@@ -155,12 +179,12 @@ export default function CartPage() {
                           <button
                             onClick={() => removeFromCart(item.cartItemId)}
                             aria-label="Remove item"
-                            className="text-bark hover:text-red-600 transition-colors"
+                            className="shrink-0 text-bark hover:text-red-600 transition-colors"
                           >
                             <Trash2 size={20} />
                           </button>
                         </div>
-                        <div className="flex items-end justify-between mt-4">
+                        <div className="flex items-end justify-between mt-4 sm:mt-0">
                           <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-cream/30 px-3 py-1.5">
                             <button
                               onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
@@ -180,7 +204,7 @@ export default function CartPage() {
                               <Plus size={14} />
                             </button>
                           </div>
-                          <p className="font-serif text-2xl font-bold text-espresso">
+                          <p className="font-serif text-xl font-bold text-espresso sm:text-2xl">
                             {formatPrice(item.price * item.quantity)}
                           </p>
                         </div>
@@ -311,4 +335,3 @@ export default function CartPage() {
     </div>
   );
 }
-

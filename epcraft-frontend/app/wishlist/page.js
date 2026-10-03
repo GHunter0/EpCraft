@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Heart, ShoppingBag } from "lucide-react";
 import AccountSidebar from "@/components/AccountSidebar";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductImageUrl } from "@/lib/products";
 import { useShop } from "@/lib/ShopContext";
 import { createClient } from "@/lib/supabase/client";
 
@@ -95,18 +95,35 @@ export default function WishlistPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {savedProducts.map((item) => (
               <div key={item.id} className="overflow-hidden rounded-xl bg-white shadow-soft transition hover:shadow-card">
-                <div className="relative flex h-64 w-full items-center justify-center bg-sand p-4 text-center font-serif text-sm text-bark/60">
-                  {item.name}
+                <Link href={`/product/${item.id}`} className="relative flex h-64 w-full overflow-hidden bg-sand">
+                  {item.image ? (
+                    <img
+                      src={getProductImageUrl(item.image)}
+                      alt={item.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center p-4 text-center font-serif text-sm text-bark/60">
+                      {item.name}
+                    </div>
+                  )}
                   <button
-                    onClick={() => toggleWishlist(item.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleWishlist(item.id);
+                    }}
                     aria-label="Remove from wishlist"
                     className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-pill bg-white/90 shadow-sm transition hover:scale-110"
                   >
                     <Heart size={18} className="fill-red-600 text-red-600" />
                   </button>
-                </div>
+                </Link>
                 <div className="flex flex-col gap-1 p-6">
-                  <h3 className="font-serif text-lg font-semibold text-espresso">{item.name}</h3>
+                  <Link href={`/product/${item.id}`}>
+                    <h3 className="font-serif text-lg font-semibold text-espresso hover:text-gold transition-colors">
+                      {item.name}
+                    </h3>
+                  </Link>
                   <p className="font-sans text-xs text-bark">{item.woodType || item.category}</p>
                   <div className="flex items-center justify-between pt-4">
                     <p className="font-serif text-lg font-bold text-espresso">
