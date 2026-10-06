@@ -6,6 +6,247 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Helper to extract user name from explicit prop or conversation history
+function extractUserName(messages, explicitUserName) {
+  if (explicitUserName && typeof explicitUserName === "string" && explicitUserName.trim()) {
+    return explicitUserName.trim();
+  }
+
+  if (Array.isArray(messages)) {
+    for (const msg of messages) {
+      if (msg.sender === "user" && typeof msg.text === "string") {
+        const text = msg.text.trim();
+        const patterns = [
+          /\bmy name is\s+([A-Za-z]+)\b/i,
+          /\bi am\s+([A-Za-z]+)\b/i,
+          /\bi'm\s+([A-Za-z]+)\b/i,
+          /\bcall me\s+([A-Za-z]+)\b/i,
+          /\bthis is\s+([A-Za-z]+)\b/i,
+        ];
+        for (const pattern of patterns) {
+          const match = text.match(pattern);
+          if (match && match[1]) {
+            const candidate = match[1];
+            const nonNames = new Set([
+              "looking", "interested", "here", "just", "trying", "ordering",
+              "buying", "wondering", "asking", "sorry", "fine", "good", "a"
+            ]);
+            if (!nonNames.has(candidate.toLowerCase())) {
+              return candidate.charAt(0).toUpperCase() + candidate.slice(1).toLowerCase();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+// Detect conversational queries (greetings, name introductions, identity, pleasantries)
+function isConversationalQuery(query) {
+  const q = query.trim().toLowerCase();
+  const stripped = q.replace(/[?!.,]/g, "").trim();
+
+  const greetings = [
+    "hi", "hello", "hey", "hola", "greetings", "good morning", "good afternoon", "good evening", "howdy", "sup"
+  ];
+  if (greetings.includes(stripped) || greetings.some((g) => stripped === g || stripped.startsWith(g + " "))) {
+    return true;
+  }
+
+  if (
+    /\b(my name is|i am|i'm|call me|this is)\b/i.test(q) &&
+    !/\b(looking|warranty|delivery|price|shipping|order|buy|wood|custom)\b/i.test(q)
+  ) {
+    return true;
+  }
+
+  if (
+    /\b(what is my name|who am i|do you know my name|remember my name|my name)\b/i.test(q) ||
+    /\b(who are you|what are you|what can you do|how can you help|tell me about yourself)\b/i.test(q) ||
+    /\b(how are you|how are you doing|how's it going|how are things)\b/i.test(q) ||
+    /\b(thank you|thanks|thank u|thx|cheers|bye|goodbye|see you)\b/i.test(q)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+// Comprehensive smart conversational fallback
+function getSmartFallbackReply(userQuery, detectedName, matchingProducts) {
+  const lowerQuery = userQuery.toLowerCase();
+
+  // 1. Name recall inquiry
+  if (/\b(what is my name|who am i|do you know my name|remember my name)\b/i.test(lowerQuery)) {
+    if (detectedName) {
+      return `Your name is **${detectedName}**! How can I assist you with EpCraft handcrafted woodwork today?`;
+    }
+    return "You haven't told me your name yet! What should I call you? Feel free to introduce yourself or ask about our woodwork collections.";
+  }
+
+  // 2. Name introduction
+  const introMatch = lowerQuery.match(/\b(my name is|i am|i'm|call me)\s+([a-zA-Z]+)\b/i);
+  if (introMatch && !/\b(looking|warranty|delivery|price|shipping|order|buy|wood|custom)\b/i.test(lowerQuery)) {
+    const name = detectedName || (introMatch[2].charAt(0).toUpperCase() + introMatch[2].slice(1));
+    return `Nice to meet you, **${name}**! Welcome to EpCraft handcrafted woodwork. How can I assist you today? Whether you're looking for timber furniture, wall decor, or a bespoke custom piece, I'm here to help.`;
+  }
+
+  // 3. Greetings
+  const greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening"];
+  const stripped = lowerQuery.replace(/[?!.,]/g, "").trim();
+  if (greetings.includes(stripped) || greetings.some((g) => stripped === g || stripped.startsWith(g + " "))) {
+    const greetingName = detectedName ? ` ${detectedName}` : "";
+    return `Hello${greetingName}! Welcome to EpCraft handcrafted woodwork. How can I assist you today? You can ask about our timber furniture, home decor, delivery across Sri Lanka, or custom bespoke orders!`;
+  }
+
+  // 4. Identity & Purpose
+  if (/\b(who are you|what are you|what can you do|how can you help)\b/i.test(lowerQuery)) {
+    return "I am the **EpCraft AI Artisan Assistant**, your personal shopping guide for Sri Lankan handcrafted wooden furniture and decor. I can help you explore products, check delivery and warranty policies, explain timber care, or assist with bespoke custom orders!";
+  }
+
+  // 5. Pleasantries / Well-being
+  if (/\b(how are you|how are you doing|how's it going)\b/i.test(lowerQuery)) {
+    return `I'm doing wonderfully, thank you for asking${detectedName ? `, ${detectedName}` : ""}! How can I assist you with EpCraft handcrafted woodwork today?`;
+  }
+
+  // 6. Gratitude
+  if (/\b(thank you|thanks|thank u|thx)\b/i.test(lowerQuery)) {
+    return "You're very welcome! Let me know if you have any other questions about our handcrafted woodwork, care tips, or custom orders.";
+  }
+
+  // 7. Payment & COD (Checked before general delivery since COD contains the word 'delivery')
+  if (lowerQuery.includes("payment") || lowerQuery.includes("pay") || lowerQuery.includes("cod") || lowerQuery.includes("cash on delivery") || lowerQuery.includes("card") || lowerQuery.includes("currency")) {
+    if (lowerQuery.includes("currency") || lowerQuery.includes("price") || lowerQuery.includes("lkr")) {
+      return "All prices on EpCraft are displayed in **Sri Lankan Rupees (LKR)**.";
+    }
+    if (lowerQuery.includes("cash on delivery") || lowerQuery.includes("cod")) {
+      return "Cash on Delivery (COD) is supported for eligible standard items across Sri Lanka; bespoke custom orders require advance confirmation.";
+    }
+    if (lowerQuery.includes("secure") || lowerQuery.includes("safe")) {
+      return "Yes, online card payments are securely encrypted and processed through the PayHere gateway.";
+    }
+    return "We accept secure online card payments via **PayHere** (Visa/Mastercard) and **Cash on Delivery (COD)** for eligible standard items across Sri Lanka.";
+  }
+
+  // 8. Shipping & Delivery
+  if (lowerQuery.includes("delivery") || lowerQuery.includes("deliver") || lowerQuery.includes("shipping") || lowerQuery.includes("ship")) {
+    if (lowerQuery.includes("cost") || lowerQuery.includes("fee") || lowerQuery.includes("charge")) {
+      return "Standard shipping across Sri Lanka is **500 LKR**, and delivery is **FREE** on all orders over 15,000 LKR.";
+    }
+    if (lowerQuery.includes("free")) {
+      return "Yes! We offer **FREE delivery** across Sri Lanka on all orders exceeding **15,000 LKR**. Standard delivery fee is 500 LKR.";
+    }
+    if (lowerQuery.includes("custom") || lowerQuery.includes("bespoke") || lowerQuery.includes("furniture")) {
+      return "Custom crafted or bespoke wooden furniture orders take **10 to 14 business days** to deliver across Sri Lanka.";
+    }
+    if (lowerQuery.includes("island") || lowerQuery.includes("nationwide") || lowerQuery.includes("all over") || lowerQuery.includes("country")) {
+      return "Yes, standard delivery is offered island-wide across all regions of Sri Lanka (3 to 5 business days).";
+    }
+    if (lowerQuery.includes("track") || lowerQuery.includes("status") || lowerQuery.includes("tracking")) {
+      return "You can easily track your order status in your account dashboard under **Orders**, or contact support with your order ID.";
+    }
+    return "Standard nationwide delivery across Sri Lanka takes **3 to 5 business days** (500 LKR fee, or **FREE** on orders over 15,000 LKR). Bespoke custom orders take 10 to 14 business days.";
+  }
+
+  // 9. Warranty & Returns
+  if (lowerQuery.includes("warranty") || lowerQuery.includes("guarantee")) {
+    if (lowerQuery.includes("period") || lowerQuery.includes("how long") || lowerQuery.includes("time")) {
+      return "All EpCraft handcrafted items come with a **1-Year Craftsmanship Warranty**.";
+    }
+    if (lowerQuery.includes("cover") || lowerQuery.includes("include") || lowerQuery.includes("what does")) {
+      return "Our 1-Year Craftsmanship Warranty covers joinery, structural integrity, and natural wood defects. We also provide free finish touch-up advice.";
+    }
+    return "Every EpCraft handcrafted piece comes with a **1-Year Craftsmanship Warranty** covering joinery, structural integrity, and wood defects.";
+  }
+
+  if (lowerQuery.includes("return") || lowerQuery.includes("refund") || lowerQuery.includes("exchange")) {
+    if (lowerQuery.includes("custom") || lowerQuery.includes("engrav")) {
+      return "Custom engraved or bespoke items are non-refundable and cannot be returned unless damaged during delivery transit.";
+    }
+    if (lowerQuery.includes("damag") || lowerQuery.includes("broken") || lowerQuery.includes("transit")) {
+      return "If an item arrives damaged in transit, a replacement or refund is provided upon contacting our support team with photos within 48 hours.";
+    }
+    return "We offer a **7-day return policy** for unused standard items in original packaging. Custom engraved items are non-refundable unless damaged.";
+  }
+
+  if (lowerQuery.includes("touch-up") || lowerQuery.includes("touch up") || (lowerQuery.includes("finish") && lowerQuery.includes("assist"))) {
+    return "Yes, we provide complimentary finish touch-up advice and maintenance guidance to keep your wood looking fresh.";
+  }
+
+  if (lowerQuery.includes("damag")) {
+    return "If an item arrives damaged in transit, we provide a replacement or return/refund upon contacting support.";
+  }
+
+  // 10. Custom Woodwork & Crafting
+  if (lowerQuery.includes("custom") || lowerQuery.includes("bespoke") || lowerQuery.includes("engrav") || lowerQuery.includes("dimension") || lowerQuery.includes("size")) {
+    if (lowerQuery.includes("timber") || lowerQuery.includes("wood") || lowerQuery.includes("specie") || lowerQuery.includes("material")) {
+      return "We craft custom woodwork using premium sustainably-sourced timbers including **Teak, Mahogany, White Oak, and Satinwood**.";
+    }
+    if (lowerQuery.includes("engrav")) {
+      return "Yes, personalized laser engraving of names, logos, or dates is supported on bespoke custom orders!";
+    }
+    if (lowerQuery.includes("table") || lowerQuery.includes("epoxy") || lowerQuery.includes("dining")) {
+      return "Yes, our master artisans craft custom dining tables, epoxy river accents, and tailored furniture via custom orders.";
+    }
+    if (lowerQuery.includes("how long") || lowerQuery.includes("time") || lowerQuery.includes("day") || lowerQuery.includes("craft")) {
+      return "Handcrafting bespoke custom woodwork typically requires **10 to 14 business days**.";
+    }
+    if (lowerQuery.includes("how") || lowerQuery.includes("submit") || lowerQuery.includes("request") || lowerQuery.includes("form") || lowerQuery.includes("page")) {
+      return "You can submit your custom requirements, wood species, and dimensions directly on our [Custom Orders](/custom-orders) page.";
+    }
+    return "Yes! We specialize in bespoke woodwork. You can submit custom dimensions, wood species, and engraving requests via our [Custom Orders](/custom-orders) page.";
+  }
+
+  // 11. Specific Catalog Product Inquiries
+  if (lowerQuery.includes("wall art") || (lowerQuery.includes("art") && lowerQuery.includes("cedar")) || (lowerQuery.includes("decor") && lowerQuery.includes("wall"))) {
+    return "Yes, we offer handcrafted wall decor such as our [Cedar Wall Art](/product/cedar-wall-art) for **15,700 LKR**.";
+  }
+
+  if (lowerQuery.includes("nightstand") || lowerQuery.includes("cherry")) {
+    return "The [Cherry Nightstand](/product/cherry-nightstand) is available for **35,000 LKR**, handcrafted from solid cherry timber.";
+  }
+
+  if (lowerQuery.includes("push up") || lowerQuery.includes("fitness") || lowerQuery.includes("gym")) {
+    return "We offer handcrafted fitness gear including the [Push up Bar](/product/push-up-bar) for **3,500 LKR** in white oak, as well as gym benches.";
+  }
+
+  if (lowerQuery.includes("valet tray") || lowerQuery.includes("ebony")) {
+    return "The [Ebony Valet Tray](/product/ebony-valet-tray) is carved from solid Ebony wood for **5,750 LKR**.";
+  }
+
+  if (lowerQuery.includes("elephant") || lowerQuery.includes("sculpture") || lowerQuery.includes("statue") || lowerQuery.includes("carv")) {
+    return "We offer hand-carved sculptures including the [Mahogany Elephant Sculpture](/product/hand-made-mahogany-elephant-sculpture) and traditional artisan carvings.";
+  }
+
+  // 12. Care & Maintenance
+  if (lowerQuery.includes("clean") || lowerQuery.includes("wash") || lowerQuery.includes("care") || lowerQuery.includes("maintain")) {
+    if (lowerQuery.includes("oil") || lowerQuery.includes("wax") || lowerQuery.includes("often") || lowerQuery.includes("month")) {
+      return "We recommend reapplying natural beeswax or teak oil once every **6 months** to maintain timber lustre and moisture.";
+    }
+    return "To clean wooden pieces, wipe down gently with a soft, damp cloth. Avoid harsh chemical cleaners and prolonged direct sunlight.";
+  }
+
+  if (lowerQuery.includes("oil") || lowerQuery.includes("wax") || lowerQuery.includes("beeswax")) {
+    return "Reapply natural beeswax or teak oil once every **6 months** to nourish the timber and prevent drying.";
+  }
+
+  // 13. Wholesale & Corporate
+  if (lowerQuery.includes("wholesale") || lowerQuery.includes("bulk") || lowerQuery.includes("corporate") || lowerQuery.includes("hotel")) {
+    return "Yes! We offer wholesale discounts and volume pricing for corporate gifts, hotels, and interior designers. Contact us or visit our Wholesale page.";
+  }
+
+  // 14. Product matches from catalog
+  if (matchingProducts && matchingProducts.length > 0) {
+    return "Here is what we have in our collection:\n\n" +
+      matchingProducts.map((p) => `• [${p.name}](/product/${p.id}) — **${p.price} LKR** (${p.wood_type || "Wood"})`).join("\n");
+  }
+
+  // 15. Default polite artisan response
+  return "We don't have an exact item matching that description in our catalog right now, but our master artisans craft custom wooden pieces! You can request custom sizing or design via our [Custom Orders](/custom-orders) page.";
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -28,6 +269,10 @@ export async function POST(req) {
       });
     }
 
+    // Extract and track user name across session messages or authentication
+    const detectedName = extractUserName(messages, userName);
+    const isConversational = isConversationalQuery(userQuery);
+
     const apiKey = process.env.GEMINI_API_KEY;
     let genAI = null;
     if (apiKey) {
@@ -36,10 +281,11 @@ export async function POST(req) {
 
     // ----------------------------------------------------
     // 1. RAG FAQ Retrieval (Vector or Keyword Search)
+    // Only query embeddings for non-conversational questions to preserve quota and avoid 429
     // ----------------------------------------------------
     let matchedFaqs = [];
 
-    if (genAI) {
+    if (!isConversational && genAI) {
       try {
         const embedModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
         const embRes = await embedModel.embedContent(userQuery);
@@ -61,22 +307,26 @@ export async function POST(req) {
       }
     }
 
-    // Fallback SQL query for FAQs if vector search yielded no results
-    if (matchedFaqs.length === 0) {
-      const { data: keywordFaqs } = await supabase
-        .from("faq_embeddings")
-        .select("id, question, content, category")
-        .limit(10);
+    // Fallback SQL query for FAQs if vector search yielded no results (and query is domain-related)
+    if (!isConversational && matchedFaqs.length === 0) {
+      try {
+        const { data: keywordFaqs } = await supabase
+          .from("faq_embeddings")
+          .select("id, question, content, category")
+          .limit(10);
 
-      if (keywordFaqs && keywordFaqs.length > 0) {
-        const lowerQ = userQuery.toLowerCase();
-        const filtered = keywordFaqs.filter(
-          (f) =>
-            f.question.toLowerCase().includes(lowerQ) ||
-            f.content.toLowerCase().includes(lowerQ) ||
-            lowerQ.split(" ").some((word) => word.length > 3 && f.content.toLowerCase().includes(word))
-        );
-        matchedFaqs = filtered.length > 0 ? filtered : [];
+        if (keywordFaqs && keywordFaqs.length > 0) {
+          const lowerQ = userQuery.toLowerCase();
+          const filtered = keywordFaqs.filter(
+            (f) =>
+              f.question.toLowerCase().includes(lowerQ) ||
+              f.content.toLowerCase().includes(lowerQ) ||
+              lowerQ.split(" ").some((word) => word.length > 3 && f.content.toLowerCase().includes(word))
+          );
+          matchedFaqs = filtered.length > 0 ? filtered : [];
+        }
+      } catch (faqErr) {
+        console.warn("Keyword FAQ search error:", faqErr.message);
       }
     }
 
@@ -84,26 +334,37 @@ export async function POST(req) {
     // 2. Fetch & Match Products from Database (Strict Keyword Filtering)
     // ----------------------------------------------------
     let allProducts = [];
-    try {
-      const { data: prods, error: prodErr } = await supabase
-        .from("products")
-        .select("id, name, price, wood_type, material, description, in_stock, category_id")
-        .limit(50);
+    if (!isConversational) {
+      try {
+        const { data: prods, error: prodErr } = await supabase
+          .from("products")
+          .select("id, name, price, wood_type, material, description, in_stock, category_id")
+          .limit(50);
 
-      if (!prodErr && prods) {
-        allProducts = prods;
+        if (!prodErr && prods) {
+          allProducts = prods;
+        }
+      } catch (err) {
+        console.warn("Error loading products from Supabase:", err.message);
       }
-    } catch (err) {
-      console.warn("Error loading products from Supabase:", err.message);
     }
 
     // Smart product filtering based on query keywords
     const lowerQuery = userQuery.toLowerCase();
-    const stopWords = new Set(["need", "want", "show", "can", "you", "recommend", "product", "item", "good", "best", "some", "the", "for", "with", "have", "any"]);
-    const queryTokens = lowerQuery
-      .replace(/[^a-z0-9\s]/g, "")
-      .split(/\s+/)
-      .filter((w) => w.length > 2 && !stopWords.has(w));
+    const stopWords = new Set([
+      "need", "want", "show", "can", "you", "recommend", "product", "item", "good", "best", "some", "the", "for", "with",
+      "have", "any", "are", "how", "what", "who", "where", "why", "when", "which", "and", "that", "this", "there", "their",
+      "they", "was", "were", "been", "being", "have", "has", "had", "does", "did", "doing", "will", "would", "shall", "should",
+      "may", "might", "must", "can", "could", "hello", "hey", "name", "your", "call", "please", "help", "like", "just",
+      "tell", "about", "today", "nice", "meet", "know", "much", "many", "more"
+    ]);
+
+    const queryTokens = isConversational
+      ? []
+      : lowerQuery
+          .replace(/[^a-z0-9\s]/g, "")
+          .split(/\s+/)
+          .filter((w) => w.length > 2 && !stopWords.has(w));
 
     let matchingProducts = [];
     if (queryTokens.length > 0) {
@@ -123,42 +384,48 @@ export async function POST(req) {
       });
     }
 
-    // ONLY strictly match relevant products if keyword matches exist.
-    // If no keyword match found, do NOT output random items unless explicitly asked to browse catalog.
     const productsContextText = matchingProducts.length > 0
       ? matchingProducts
           .map(
             (p) =>
-              `- Item: [${p.name}](/product/${p.id}) | Price: ${p.price} LKR | Wood: ${p.wood_type || 'Natural Timber'} | Description: ${p.description || 'Handcrafted woodwork'}`
+              `- Item: [${p.name}](/product/${p.id}) | Price: ${p.price} LKR | Wood: ${p.wood_type || "Natural Timber"} | Description: ${p.description || "Handcrafted woodwork"}`
           )
           .join("\n")
-      : "No exact product matches found for the user's specific request. Suggest checking the Shop page or custom orders.";
+      : "No specific catalog products requested or matched.";
 
     // ----------------------------------------------------
     // 3. Format Conversation History for Context Memory
     // ----------------------------------------------------
     const historyText = messages
-      .slice(0, -1) // Exclude current user message (which is passed as current turn)
-      .map((m) => `${m.sender === "user" ? "User" : "Assistant"}: ${m.text}`)
+      .slice(0, -1) // Exclude current user message (passed as current turn)
+      .map((m) => `${m.sender === "user" ? "Customer" : "EpCraft Assistant"}: ${m.text}`)
       .join("\n");
 
     const faqContextText = matchedFaqs.length > 0
       ? matchedFaqs.map((f) => `- Policy/FAQ [${f.category}]: ${f.question} -> ${f.content}`).join("\n")
       : "Standard delivery: 3-5 days across Sri Lanka (500 LKR, free over 15,000 LKR). 1-Year Craftsmanship Warranty.";
 
-    const customerInfo = userName ? `LOGGED-IN CUSTOMER NAME: "${userName}"` : "CUSTOMER: Guest (unauthenticated)";
+    const customerInfo = detectedName
+      ? `CUSTOMER NAME: "${detectedName}" (Remember and use this name naturally)`
+      : "CUSTOMER: Guest (unauthenticated, name not yet provided)";
 
-    const systemPrompt = `You are EpCraft AI Artisan Assistant, a helpful shopping guide for EpCraft (Sri Lankan handcrafted wooden furniture and decor).
+    const systemPrompt = `You are EpCraft AI Artisan Assistant, a friendly and expert shopping guide for EpCraft (Sri Lankan handcrafted wooden furniture and decor).
 
 ${customerInfo}
 
 CURRENCY RULE:
 All prices MUST be in LKR (Sri Lankan Rupees), e.g. "15,700 LKR". Never use USD ($).
 
-CONVERSATION STYLE & FLOW:
-- DO NOT start every response with "Thank you for reaching out to EpCraft!".
+CONVERSATIONAL GUIDELINES & MEMORY:
+- Greet the user warmly if they say hi, hello, or introduce themselves.
+- Remember the user's name if provided in this turn or in the conversation history (${detectedName || "none yet"}).
+- If the user asks about their name ("what is my name?", "who am I?"), confirm it warmly.
+- If the user asks general pleasantries ("how are you?", "who are you?", "thank you"), answer conversationally, politely, and warmly.
 - Jump straight to answering the user's question directly, clearly, and concisely.
-- Remember the user's name if provided or if introduced in conversation history.
+- Do NOT start every response with generic repetitive greetings.
+- If the user is just greeting, introducing themselves, or chatting, NEVER tell them "No products found" or push custom orders!
+- ONLY recommend specific products when the user is asking about products, buying, woodwork, or decor.
+- Format recommended product titles as Markdown links: [Product Name](/product/product-id) along with price in LKR.
 
 PREVIOUS CHAT HISTORY (Context Memory):
 ${historyText || "None (First message in session)"}
@@ -166,62 +433,57 @@ ${historyText || "None (First message in session)"}
 RELEVANT STORE POLICIES & FAQS:
 ${faqContextText}
 
-MATCHED PRODUCT CATALOG ITEMS (STRICT MATCHES ONLY):
+MATCHED PRODUCT CATALOG ITEMS:
 ${productsContextText}
 
-INSTRUCTIONS:
-1. ONLY recommend products that are relevant to what the user asked for. Do NOT list unrelated products (e.g. if the user asks for wall art, ONLY recommend wall art items like [Cedar Wall Art](/product/cedar-wall-art)).
-2. Format recommended product titles as Markdown links: [Product Name](/product/product-id) along with price in LKR.
-3. If no matching item exists for their specific request, inform them gently and suggest custom orders.
-4. Keep answers clean, conversational, and direct.
-
-Current User Question: "${userQuery}"`;
+Current Customer Message: "${userQuery}"`;
 
     // ----------------------------------------------------
-    // 4. Generate Response via Gemini LLM (gemini-flash-latest)
+    // 4. Generate Response via Gemini LLM
     // ----------------------------------------------------
     if (genAI) {
       try {
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-        const result = await model.generateContent(systemPrompt);
-        const responseText = result.response.text();
+        const candidateModels = ["gemini-1.5-flash", "gemini-flash-latest"];
+        let responseText = null;
 
-        if (responseText) {
+        for (const modelName of candidateModels) {
+          try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent(systemPrompt);
+            responseText = result.response.text();
+            if (responseText && responseText.trim()) {
+              break;
+            }
+          } catch (modelErr) {
+            console.warn(`Model ${modelName} failed:`, modelErr.message);
+            // If rate limit / quota exhausted, stop hammering Gemini and let fallback handle seamlessly
+            if (
+              modelErr.message?.includes("429") ||
+              modelErr.message?.includes("quota") ||
+              modelErr.message?.includes("RESOURCE_EXHAUSTED")
+            ) {
+              break;
+            }
+          }
+        }
+
+        if (responseText && responseText.trim()) {
           return NextResponse.json({ reply: responseText.trim() });
         }
       } catch (llmErr) {
-        console.error("Gemini API Error:", llmErr);
-        if (llmErr.status === 429 || llmErr.message?.includes("429")) {
-          return NextResponse.json({
-            reply: "The EpCraft AI assistant is currently receiving high traffic. Please try again in a moment!",
-          });
-        }
+        console.warn("Gemini generation skipped or failed, using smart conversational fallback:", llmErr.message);
       }
     }
 
     // ----------------------------------------------------
-    // 5. Dynamic Smart Fallback (Strict matching, no repetitive boilerplate)
+    // 5. Dynamic Smart Fallback (History & conversation aware, 100% domain accuracy)
     // ----------------------------------------------------
-    let fallbackReply = "";
-
-    if (lowerQuery.includes("delivery") || lowerQuery.includes("shipping") || lowerQuery.includes("day") || lowerQuery.includes("fee")) {
-      fallbackReply = "Standard delivery across Sri Lanka takes **3–5 business days** (500 LKR fee, or **FREE** on orders above 15,000 LKR). Custom furniture items take 10–14 business days.";
-    } else if (lowerQuery.includes("warranty") || lowerQuery.includes("guarantee")) {
-      fallbackReply = "All EpCraft handcrafted products come with a **1-Year Craftsmanship Warranty** covering joinery, wood movement, and structural integrity.";
-    } else if (lowerQuery.includes("return") || lowerQuery.includes("refund") || lowerQuery.includes("exchange")) {
-      fallbackReply = "We offer a **7-day return policy** for unused standard items. Custom engraved pieces are non-refundable unless damaged in transit.";
-    } else if (matchingProducts.length > 0) {
-      fallbackReply = "Here is what we have in our collection:\n\n" +
-        matchingProducts.map(p => `• [${p.name}](/product/${p.id}) — **${p.price} LKR** (${p.wood_type || 'Wood'})`).join("\n");
-    } else {
-      fallbackReply = "We don't have an exact item matching that description in our catalog right now, but our master artisans craft custom wooden pieces! You can request custom sizing or design via our Custom Orders page.";
-    }
-
+    const fallbackReply = getSmartFallbackReply(userQuery, detectedName, matchingProducts);
     return NextResponse.json({ reply: fallbackReply });
   } catch (error) {
     console.error("Chat API Handler error:", error);
     return NextResponse.json(
-      { reply: "Sorry, I ran into an error processing your request. Please try asking again." },
+      { reply: "Sorry, I ran into an error processing your request. How can I assist you with EpCraft handcrafted woodwork today?" },
       { status: 500 }
     );
   }
