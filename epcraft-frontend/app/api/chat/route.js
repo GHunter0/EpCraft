@@ -121,11 +121,11 @@ function extractUserName(messages, explicitUserName) {
       if (msg.sender === "user" && typeof msg.text === "string") {
         const text = msg.text.trim();
         const patterns = [
-          /\bmy name is\s+([A-Za-z]+)\b/i,
-          /\bi am\s+([A-Za-z]+)\b/i,
-          /\bi'm\s+([A-Za-z]+)\b/i,
-          /\bcall me\s+([A-Za-z]+)\b/i,
-          /\bthis is\s+([A-Za-z]+)\b/i,
+          /\b(?:my\s+name\s+is|my\s+name['’]?s|names)\s+([A-Za-z]+)\b/i,
+          /\b(?:i['’]?m|i\s+am|im|myself)\s+([A-Za-z]+)\b/i,
+          /\bcall\s+me\s+([A-Za-z]+)\b/i,
+          /\bthis\s+is\s+([A-Za-z]+)\b/i,
+          /\b(?:it['’]?s|its)\s+([A-Za-z]+)\b/i,
         ];
         for (const pattern of patterns) {
           const match = text.match(pattern);
@@ -133,7 +133,7 @@ function extractUserName(messages, explicitUserName) {
             const candidate = match[1];
             const nonNames = new Set([
               "looking", "interested", "here", "just", "trying", "ordering",
-              "buying", "wondering", "asking", "sorry", "fine", "good", "a"
+              "buying", "wondering", "asking", "sorry", "fine", "good", "a", "the", "an", "new"
             ]);
             if (!nonNames.has(candidate.toLowerCase())) {
               return candidate.charAt(0).toUpperCase() + candidate.slice(1).toLowerCase();
@@ -159,6 +159,22 @@ function isConversationalQuery(query) {
     return false;
   }
 
+  // Name recall variations: "what is my name", "whats my name", "who am i", etc.
+  if (
+    /\b(what['’]?s\s+my\s+name|what\s+is\s+my\s+name|what\s+was\s+my\s+name|whats\s+my\s+name|who\s+am\s+i|who\s+i\s+am|tell\s+me\s+my\s+name|say\s+my\s+name|know\s+my\s+name|remember\s+my\s+name|remember\s+me)\b/i.test(q) ||
+    /^\s*(my\s+name\??|whats\s+my\s+name\??|what['’]?s\s+my\s+name\??)\s*$/i.test(q)
+  ) {
+    return true;
+  }
+
+  // Name introductions: "im shalitha", "my name is shalitha", "call me shalitha"
+  if (
+    /\b(?:my\s+name\s+is|my\s+name['’]?s|names|i['’]?m|i\s+am|im|myself|call\s+me)\s+([A-Za-z]+)\b/i.test(q) &&
+    !/\b(looking|warranty|delivery|price|shipping|order|buy|wood|custom)\b/i.test(q)
+  ) {
+    return true;
+  }
+
   const greetings = [
     "hi", "hello", "hey", "hola", "greetings", "good morning", "good afternoon", "good evening", "howdy", "sup"
   ];
@@ -167,14 +183,6 @@ function isConversationalQuery(query) {
   }
 
   if (
-    /\b(my name is|i am|i'm|call me|this is)\b/i.test(q) &&
-    !/\b(looking|warranty|delivery|price|shipping|order|buy|wood|custom)\b/i.test(q)
-  ) {
-    return true;
-  }
-
-  if (
-    /\b(what is my name|who am i|do you know my name|remember my name|my name)\b/i.test(q) ||
     /\b(who are you|what are you|what can you do|how can you help|tell me about yourself)\b/i.test(q) ||
     /\b(how are you|how are you doing|how's it going|how are things)\b/i.test(q) ||
     /\b(thank you|thanks|thank u|thx|cheers|bye|goodbye|see you)\b/i.test(q)
@@ -187,20 +195,30 @@ function isConversationalQuery(query) {
 
 // Comprehensive smart conversational fallback
 function getSmartFallbackReply(userQuery, detectedName, matchingProducts) {
-  const lowerQuery = userQuery.toLowerCase();
+  const lowerQuery = userQuery.toLowerCase().trim();
 
-  // 1. Name recall inquiry
-  if (/\b(what is my name|who am i|do you know my name|remember my name)\b/i.test(lowerQuery)) {
+  // 1. Name recall inquiry: "whats my name", "what is my name", "who am i", "do you know my name"
+  if (
+    /\b(what['’]?s\s+my\s+name|what\s+is\s+my\s+name|what\s+was\s+my\s+name|whats\s+my\s+name|who\s+am\s+i|who\s+i\s+am|tell\s+me\s+my\s+name|say\s+my\s+name|know\s+my\s+name|remember\s+my\s+name|remember\s+me)\b/i.test(lowerQuery) ||
+    /^\s*(my\s+name\??|whats\s+my\s+name\??|what['’]?s\s+my\s+name\??)\s*$/i.test(lowerQuery)
+  ) {
     if (detectedName) {
       return `Your name is **${detectedName}**! How can I assist you with EpCraft handcrafted woodwork today?`;
     }
     return "You haven't told me your name yet! What should I call you? Feel free to introduce yourself or ask about our woodwork collections.";
   }
 
-  // 2. Name introduction
-  const introMatch = lowerQuery.match(/\b(my name is|i am|i'm|call me)\s+([a-zA-Z]+)\b/i);
-  if (introMatch && !/\b(looking|warranty|delivery|price|shipping|order|buy|wood|custom|product)\b/i.test(lowerQuery)) {
-    const name = detectedName || (introMatch[2].charAt(0).toUpperCase() + introMatch[2].slice(1));
+  // 2. Name introduction: "hello im shalitha", "im shalitha", "my name is shalitha"
+  const introPatterns = [
+    /\b(?:my\s+name\s+is|my\s+name['’]?s|names)\s+([a-zA-Z]+)\b/i,
+    /\b(?:i['’]?m|i\s+am|im|myself)\s+([a-zA-Z]+)\b/i,
+    /\bcall\s+me\s+([a-zA-Z]+)\b/i,
+  ];
+  const matchedIntro = introPatterns.find((p) => p.test(lowerQuery));
+  if (matchedIntro && !/\b(looking|warranty|delivery|price|shipping|order|buy|wood|custom|product)\b/i.test(lowerQuery)) {
+    const rawMatch = lowerQuery.match(matchedIntro);
+    const candidateName = rawMatch && rawMatch[1] ? (rawMatch[1].charAt(0).toUpperCase() + rawMatch[1].slice(1)) : detectedName;
+    const name = candidateName || detectedName || "friend";
     return `Nice to meet you, **${name}**! Welcome to EpCraft handcrafted woodwork. How can I assist you today? Whether you're looking for timber furniture, wall decor, or a bespoke custom piece, I'm here to help.`;
   }
 
@@ -626,8 +644,9 @@ All prices MUST be in LKR (Sri Lankan Rupees), e.g. "15,700 LKR". Never use USD 
 
 CONVERSATIONAL GUIDELINES & MEMORY:
 - Greet the user warmly if they say hi, hello, or introduce themselves.
+- If the user introduces themselves (e.g. "hello im shalitha", "my name is ..."), greet them warmly by their name.
 - Remember the user's name if provided in this turn or in the conversation history (${detectedName || "none yet"}).
-- If the user asks about their name ("what is my name?", "who am I?"), confirm it warmly.
+- If the user asks about their name ("what is my name?", "whats my name?", "who am I?"), confirm their name directly: "Your name is ${detectedName || '...'}!".
 - If the user asks general pleasantries ("how are you?", "who are you?", "thank you"), answer conversationally, politely, and warmly.
 - When the user asks for "popular products", "best sellers", or room items (like "living room", "bedroom", "kitchen"), recommend the matching products listed in the context below with their Markdown links and prices in LKR.
 - Jump straight to answering the user's question directly, clearly, and concisely.
